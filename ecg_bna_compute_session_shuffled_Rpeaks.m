@@ -161,7 +161,7 @@ for b=1:numel(out)
     Rpeaks(b).shuffled_dur = RPEAK_dur_p; % durations of reshuffled RR-intervals (the corresponding ends of those intervals are in Rpeaks(b).shuffled_ts)
     offset_blocks_Rpeak(b+1)=offset_blocks_Rpeak(b)+max(RPEAK_ts)+allowed_jitter_range*2;
     
-    if isfield(cfg,'IBI') && ~isfield(cfg,'PSTH_binwidth') % I check here for 'PSTH_binwidth' to make sure this is LFP analysis and not spike one
+    if isfield(cfg,'IBI') && ~isfield(cfg,'PSTH_binwidth')  && cfg.IBI==1 % I check here for 'PSTH_binwidth' to make sure this is LFP analysis and not spike one
         Rpeaks(b).IBI_split_Rpeak_list = IBI_split_Rpeak_list(b);
     end
     clear RPEAK_ts RPEAK_dur RPEAK_ts_p RPEAK_dur_p allowed_jitter_range

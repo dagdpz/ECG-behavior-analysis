@@ -26,8 +26,8 @@ if strcmp(type , 'normalized')
     clear grand_avg
     %%
     % storing all the Triggered parameters of the sites in the results folder
-    
-    condname = {IBIhigh(1).avg.cond_name};
+    condName_idx = find(~[IBIhigh.nSites]==0);
+    condname = {IBIhigh(condName_idx(1)).avg.cond_name};
     for tr = 1:length(IBIhigh)
         for cn = 1:2
             IBIdiff(tr).target = IBIhigh(tr).target;

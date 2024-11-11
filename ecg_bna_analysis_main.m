@@ -521,7 +521,7 @@ for v = 1:length(versions)
                ecg_bna_compute_IBI_raw_diff(cfg, 'wo_units', cfg.lfp.IBIdiff_type);
             end
             
-            if isfield(cfg.lfp, 'cluster_perm') && cfg.lfp.cluster_perm==1
+            if isfield(cfg.lfp, 'cluster_perm') && cfg.lfp.cluster_perm==1 && isfield(cfg.lfp , 'IBI_diff') && exist(IBI_low_grand_avg_results_file,'file') && exist(IBI_high_grand_avg_results_file,'file')
                ecg_bna_cluster_perm_condition_diff(cfg,'all','itpc');
             end
         end
