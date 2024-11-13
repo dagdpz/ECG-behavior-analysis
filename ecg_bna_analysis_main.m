@@ -500,29 +500,33 @@ for v = 1:length(versions)
                 % Read LFP data
                 cfg.session_lfp_fldr = fullfile(cfg.analyse_lfp_folder, 'Per_Session');
                 cfg.sites_lfp_fldr   = fullfile(cfg.analyse_lfp_folder, 'Per_Site');
+                cfg.grand_avg_fldr   = fullfile(cfg.analyse_lfp_folder, 'grand_average_all');
             end
             
-            grand_avg = ecg_bna_compute_grand_avg(cfg,'w_units');
-            grand_avg = ecg_bna_compute_grand_avg(cfg,'wo_units');
-            grand_avg = ecg_bna_compute_grand_avg(cfg,'all');
+%             grand_avg = ecg_bna_compute_grand_avg(cfg,'w_units');
+%             grand_avg = ecg_bna_compute_grand_avg(cfg,'wo_units');
+%             grand_avg = ecg_bna_compute_grand_avg(cfg,'all');
             
-            if isfield(cfg.lfp , 'TaskRest_diff') && cfg.lfp.TaskRest_diff==1
-                Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'all');
-                Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'w_units');
-                Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'wo_units');
-            end
+%             if isfield(cfg.lfp , 'TaskRest_diff') && cfg.lfp.TaskRest_diff==1
+%                 Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'all');
+%                 Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'w_units');
+%                 Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'wo_units');
+%             end
+% %             
+%             IBI_high_grand_avg_results_file = fullfile([cfg.analyse_lfp_folder filesep 'grand_average_IBIhigh' filesep cfg.monkey,'_',cfg.analyse_states{1, 2} ,'_Triggered_target_wise_Condition_diff_grand_avg_sessions_sites','all','.mat']);
+%             IBI_low_grand_avg_results_file = fullfile([cfg.analyse_lfp_folder filesep 'grand_average_IBIlow' filesep cfg.monkey,'_',cfg.analyse_states{1, 2} ,'_Triggered_target_wise_Condition_diff_grand_avg_sessions_sites','all','.mat']);
+%             
+%             if isfield(cfg.lfp , 'IBI_diff') && exist(IBI_low_grand_avg_results_file,'file') && exist(IBI_high_grand_avg_results_file,'file')
+%                ecg_bna_compute_IBI_raw_diff(cfg, 'all', cfg.lfp.IBIdiff_type);
+%                ecg_bna_compute_IBI_raw_diff(cfg, 'w_units', cfg.lfp.IBIdiff_type);
+%                ecg_bna_compute_IBI_raw_diff(cfg, 'wo_units', cfg.lfp.IBIdiff_type);
+%             end
             
-            IBI_high_grand_avg_results_file = fullfile([cfg.analyse_lfp_folder filesep 'grand_average_IBIhigh' filesep cfg.monkey,'_',cfg.analyse_states{1, 2} ,'_Triggered_target_wise_Condition_diff_grand_avg_sessions_sites','all','.mat']);
-            IBI_low_grand_avg_results_file = fullfile([cfg.analyse_lfp_folder filesep 'grand_average_IBIlow' filesep cfg.monkey,'_',cfg.analyse_states{1, 2} ,'_Triggered_target_wise_Condition_diff_grand_avg_sessions_sites','all','.mat']);
-            
-            if isfield(cfg.lfp , 'IBI_diff') && exist(IBI_low_grand_avg_results_file,'file') && exist(IBI_high_grand_avg_results_file,'file')
-               ecg_bna_compute_IBI_raw_diff(cfg, 'all', cfg.lfp.IBIdiff_type);
-               ecg_bna_compute_IBI_raw_diff(cfg, 'w_units', cfg.lfp.IBIdiff_type);
-               ecg_bna_compute_IBI_raw_diff(cfg, 'wo_units', cfg.lfp.IBIdiff_type);
-            end
-            
-            if isfield(cfg.lfp, 'cluster_perm') && cfg.lfp.cluster_perm==1 && isfield(cfg.lfp , 'IBI_diff') && exist(IBI_low_grand_avg_results_file,'file') && exist(IBI_high_grand_avg_results_file,'file')
+%             if isfield(cfg.lfp, 'cluster_perm') && cfg.lfp.cluster_perm==1 && isfield(cfg.lfp , 'IBI_diff') && exist(IBI_low_grand_avg_results_file,'file') && exist(IBI_high_grand_avg_results_file,'file')
+            if isfield(cfg.lfp, 'cluster_perm') && cfg.lfp.cluster_perm==1 
                ecg_bna_cluster_perm_condition_diff(cfg,'all','itpc');
+               ecg_bna_cluster_perm_condition_diff(cfg,'all','pow');
+%                ecg_bna_cluster_perm_condition_diff(cfg,'all','lfp');
             end
         end
         

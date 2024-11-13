@@ -105,6 +105,8 @@ if reprocess
     %% this part to remove sites with not all conditions?
     % out_mask = cellfun(@isempty, {out.site_ID});
     % out = out(~out_mask);
+    listOfExcluded_sites = {out(find([out.all_conditions_present]==0)).site_ID};
+    save(fullfile([cfg.results_folder,filesep, 'listOfExcluded_sites_',cfg.monkey ]),"listOfExcluded_sites",'-v7.3');
     out = out([out.all_conditions_present]==1);
     
     %%

@@ -17,7 +17,7 @@ if isfield(cfg.lfp,'IBI') && cfg.lfp.IBI==1
     end
 elseif isfield(cfg.lfp,'IBI') && cfg.lfp.IBI==0
     type = 'woIBIsplit';
-    path_to_grand_avg   = fullfile(cfg.analyse_lfp_folder, 'grand_avg_all');
+    path_to_grand_avg   = fullfile(cfg.analyse_lfp_folder, 'grand_average_all');
     cd(path_to_grand_avg)
     load(fullfile(path_to_grand_avg,filesep,[cfg.monkey,...
         '_R peak_Triggered_target_wise_Grand_grand_avg_sessions_sites',withunits,'.mat']));
@@ -36,56 +36,130 @@ for tr = 1:length(target)
         continue;
     else
         cond = {[grand_avg(tr).avg(1).cond_name,'-',grand_avg(tr).avg(2).cond_name]};
-        data_rest = grand_avg(tr).avg(1).(data_label); % grand adverage of target, Rest Condition , across grand_avg(2).nSites;
-        data_task =  grand_avg(tr).avg(2).(data_label); % grand adverage of target, Task Condition ,across grand_avg(2).nSites;
-        tfr_freq = cfg.lfp.foi; %logspace(log10(2),log10(120),60);
         
-        % Step 1: Create FieldTrip-compliant structures for task and rest conditions
-        freq_task = [];
-        freq_task.label     = {data_label};  % Dummy label (no real channels here)
-        freq_task.dimord    = 'rpt_freq_time';  % Trials, frequencies, and time
-        freq_task.freq      = tfr_freq;  % Frequency vector
-        freq_task.time      = tfr_time;  % Time vector
-        freq_task.powspctrm = permute(data_task, [3, 1, 2]);  % [trials x frequencies x time]
-        
-        freq_rest = [];
-        freq_rest.label     = {data_label};  % Dummy label (no real channels here)
-        freq_rest.dimord    = 'rpt_freq_time';  % Trials, frequencies, and time
-        freq_rest.freq      = tfr_freq;  % Frequency vector
-        freq_rest.time      = tfr_time;  % Time vector
-        freq_rest.powspctrm = permute(data_rest, [3, 1, 2]);  % [trials x frequencies x time]
-        
-        % Step 2: Prepare configuration for cluster-based permutation testing
-        cfg_perm = [];
-        cfg_perm.method           = 'montecarlo';             % Monte Carlo permutation method
-        cfg_perm.statistic        = 'ft_statfun_indepsamplesT'; % Independent samples t-test
-        cfg_perm.correctm         = 'cluster';                % Cluster-based correction
-        cfg_perm.clusteralpha     = 0.01;                     % Cluster-forming threshold
-        cfg_perm.clusterstatistic = 'maxsum';                 % Max-sum clustering or 'maxsize', 'wcm' (weighted cluster mass), 'wcs' (weighted cluster size)
-        cfg_perm.minnbchan        = 0;                        % No neighboring channels (no spatial information)
-        cfg_perm.tail             = 0;                        % Two-tailed test
-        cfg_perm.clustertail      = 0;                        % Two-tailed for clustering
-        cfg_perm.alpha            = 0.01;                     % Alpha level for the permutation test
-        cfg_perm.numrandomization = 1000;                     % Number of randomizations
-        cfg.neighbours            = [];
-        % Define a dummy connectivity matrix for the frequencies
-        num_freqs = length(tfr_freq);  % Number of frequency bins
-        cfg_perm.connectivity = ones(num_freqs, num_freqs);  % Fully connected between frequencies
-        
-        
-        % Step 3: Create the design matrix
-        n_trials_task = size(data_task, 3);  % Number of trials in task condition
-        n_trials_rest = size(data_rest, 3);  % Number of trials in rest condition
-        
-        design = zeros(1, n_trials_task + n_trials_rest);
-        design(1, 1:n_trials_task) = 1;  % Label task trials as 1
-        design(1, (n_trials_task+1):(n_trials_task+n_trials_rest)) = 2;  % Label rest trials as 2
-        
-        cfg_perm.design = design;        % Design: task vs. rest
-        cfg_perm.ivar   = 1;             % The independent variable (1: task, 2: rest)
-        
-        % Step 4: Perform the cluster-based permutation test
-        [stat] = ft_freqstatistics(cfg_perm, freq_task, freq_rest);
+        if strcmp(data_label,'itpc') || strcmp(data_label,'pow')
+            data_rest = grand_avg(tr).avg(1).(data_label); % grand adverage of target, Rest Condition , across grand_avg(2).nSites;
+            data_task =  grand_avg(tr).avg(2).(data_label); % grand adverage of target, Task Condition ,across grand_avg(2).nSites;
+            tfr_freq = cfg.lfp.foi; %logspace(log10(2),log10(120),60);
+            
+            % Step 1: Create FieldTrip-compliant structures for task and rest conditions
+            freq_task = [];
+            freq_task.label     = {data_label};  % Dummy label (no real channels here)
+            freq_task.dimord    = 'rpt_freq_time';  % Trials, frequencies, and time
+            freq_task.freq      = tfr_freq;  % Frequency vector
+            freq_task.time      = tfr_time;  % Time vector
+            freq_task.powspctrm = permute(data_task, [3, 1, 2]);  % [trials x frequencies x time]
+            
+            freq_rest = [];
+            freq_rest.label     = {data_label};  % Dummy label (no real channels here)
+            freq_rest.dimord    = 'rpt_freq_time';  % Trials, frequencies, and time
+            freq_rest.freq      = tfr_freq;  % Frequency vector
+            freq_rest.time      = tfr_time;  % Time vector
+            freq_rest.powspctrm = permute(data_rest, [3, 1, 2]);  % [trials x frequencies x time]
+            
+            % Step 2: Prepare configuration for cluster-based permutation testing
+            cfg_perm = [];
+            cfg_perm.method           = 'montecarlo';             % Monte Carlo permutation method
+            %         cfg_perm.statistic        = 'ft_statfun_indepsamplesT'; % Independent samples t-test
+            cfg_perm.statistic        = 'ft_statfun_depsamplesT'; % Independent samples t-test
+            cfg_perm.correctm         = 'cluster';                % Cluster-based correction
+            cfg_perm.clusteralpha     = 0.01;                     % Cluster-forming threshold
+            cfg_perm.clusterstatistic = 'maxsum';                 % Max-sum clustering or 'maxsize', 'wcm' (weighted cluster mass), 'wcs' (weighted cluster size)
+            cfg_perm.minnbchan        = 0;                        % No neighboring channels (no spatial information)
+            cfg_perm.tail             = 0;                        % Two-tailed test
+            cfg_perm.clustertail      = 0;                        % Two-tailed for clustering
+            cfg_perm.alpha            = 0.01;                     % Alpha level for the permutation test
+            cfg.correcttail           = 'alpha';                  % FDR correction for two-tailed T-test
+            cfg_perm.numrandomization = 5000;                     % Number of randomizations
+            cfg_perm.neighbours            = [];
+            
+            % Define a dummy connectivity matrix for the frequencies
+            num_freqs = length(tfr_freq);  % Number of frequency bins
+            cfg_perm.connectivity = ones(num_freqs, num_freqs);  % Fully connected between frequencies
+            
+            
+            % Step 3: Create the design matrix
+            
+            % %         n_trials_task = size(data_task, 3);  % Number of trials in task condition
+            % %         n_trials_rest = size(data_rest, 3);  % Number of trials in rest condition
+            % %
+            % %         design = zeros(1, n_trials_task + n_trials_rest);
+            % %         design(1, 1:n_trials_task) = 1;  % Label task trials as 1
+            % %         design(1, (n_trials_task+1):(n_trials_task+n_trials_rest)) = 2;  % Label rest trials as 2
+            % %
+            % %         cfg_perm.design = design;        % Design: task vs. rest
+            % %         cfg_perm.ivar   = 1;             % The independent variable (1: task, 2: rest)
+            
+            % Define the design matrix for dependent samples (Task vs. Rest)
+            nSites = size(freq_task.powspctrm,1);
+            
+            design = zeros(2, 2 * nSites);
+            design(1, 1:nSites)         = 1;          % Task condition
+            design(1, nSites+1:end)     = 2;          % Rest condition
+            design(2, :)                   = [1:nSites, 1:nSites];  % site indices
+            
+            cfg_perm.design = design;
+            cfg_perm.uvar   = 2;                              % Unit variable (Site index)
+            cfg_perm.ivar   = 1;                              % Independent variable (condition: Task vs. Rest)
+            
+            % Step 4: Perform the cluster-based permutation test
+            [stat] = ft_freqstatistics(cfg_perm, freq_task, freq_rest);
+            
+        elseif strcmp(data_label,'lfp')
+            data_rest = grand_avg(tr).avg(1).(data_label); % grand adverage of target, Rest Condition , across grand_avg(2).nSites;
+            data_task =  grand_avg(tr).avg(2).(data_label); % grand adverage of target, Task Condition ,across grand_avg(2).nSites;
+            
+            
+            % Step 1: Create FieldTrip-compliant structures for task and rest conditions
+            LFP_task = [];
+            LFP_task.label     = {data_label};  % Dummy label (no real channels here)
+            LFP_task.dimord    = 'rpt_freq_time';  % Trials, frequencies, and time
+            LFP_task.time      = time;  % Time vector
+            LFP_task.powspctrm = permute(data_task, [3, 1, 2]);  % [trials x frequencies x time]
+            
+            freq_rest = [];
+            freq_rest.label     = {data_label};  % Dummy label (no real channels here)
+            freq_rest.dimord    = 'rpt_freq_time';  % Trials, frequencies, and time
+            freq_rest.freq      = tfr_freq;  % Frequency vector
+            freq_rest.time      = tfr_time;  % Time vector
+            freq_rest.powspctrm = permute(data_rest, [3, 1, 2]);  % [trials x frequencies x time]
+            
+            % Step 2: Prepare configuration for cluster-based permutation testing
+            cfg_perm = [];
+            cfg_perm.method           = 'montecarlo';             % Monte Carlo permutation method
+            cfg_perm.statistic        = 'ft_statfun_depsamplesT'; % Independent samples t-test
+            cfg_perm.correctm         = 'cluster';                % Cluster-based correction
+            cfg_perm.clusteralpha     = 0.01;                     % Cluster-forming threshold
+            cfg_perm.clusterstatistic = 'maxsum';                 % Max-sum clustering or 'maxsize', 'wcm' (weighted cluster mass), 'wcs' (weighted cluster size)
+            cfg_perm.minnbchan        = 0;                        % No neighboring channels (no spatial information)
+            cfg_perm.tail             = 0;                        % Two-tailed test
+            cfg_perm.clustertail      = 0;                        % Two-tailed for clustering
+            cfg_perm.alpha            = 0.01;                     % Alpha level for the permutation test
+            cfg.correcttail           = 'alpha';                  % FDR correction for two-tailed T-test
+            cfg_perm.numrandomization = 5000;                     % Number of randomizations
+            cfg_perm.neighbours            = [];
+            
+            % Define a dummy connectivity matrix for the frequencies
+            num_freqs = length(tfr_freq);  % Number of frequency bins
+            cfg_perm.connectivity = ones(num_freqs, num_freqs);  % Fully connected between frequencies
+            
+            
+            % Step 3:  Define the design matrix for dependent samples (Task vs. Rest)
+            nSites = size(LFP_task.powspctrm,1);
+            
+            design = zeros(2, 2 * nSites);
+            design(1, 1:nSites)         = 1;          % Task condition
+            design(1, nSites+1:end)     = 2;          % Rest condition
+            design(2, :)                   = [1:nSites, 1:nSites];  % site indices
+            
+            cfg_perm.design = design;
+            cfg_perm.uvar   = 2;                              % Unit variable (Site index)
+            cfg_perm.ivar   = 1;                              % Independent variable (condition: Task vs. Rest)
+            
+            % Step 4: Perform the cluster-based permutation test
+            [stat] = ft_freqstatistics(cfg_perm, LFP_task, freq_rest);
+            
+        end
         
         %     temp = cat(3, stat.stat, stat.stat );
         %     temp = permute(temp, [3, 1, 2]);
