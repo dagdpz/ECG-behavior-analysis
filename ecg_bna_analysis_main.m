@@ -506,21 +506,32 @@ for v = 1:length(versions)
 %             grand_avg = ecg_bna_compute_grand_avg(cfg,'w_units');
 %             grand_avg = ecg_bna_compute_grand_avg(cfg,'wo_units');
 %             grand_avg = ecg_bna_compute_grand_avg(cfg,'all');
+            withunits_list = {'all','w_units','wo_units'};
+            shad_list = {'percentile', 'std'};
+            for shad = 1:2
+                for withunits = 1:length(withunits_list)
+                    grand_avg = ecg_bna_compute_grand_avg_DiffNormMethods(cfg,withunits_list{withunits},'zscore','abs',shad_list{shad}); % shading options: 'std', 'percentile'
+                    grand_avg = ecg_bna_compute_grand_avg_DiffNormMethods(cfg,withunits_list{withunits},'raw','raw',shad_list{shad});
+                    grand_avg = ecg_bna_compute_grand_avg_DiffNormMethods(cfg,withunits_list{withunits},'subtraction','raw',shad_list{shad});
+                    grand_avg = ecg_bna_compute_grand_avg_DiffNormMethods(cfg,withunits_list{withunits},'mean_division','raw',shad_list{shad});
+                    grand_avg = ecg_bna_compute_grand_avg_DiffNormMethods(cfg,withunits_list{withunits},'std_division','raw',shad_list{shad});
+                end
+            end
             
-%             if isfield(cfg.lfp , 'TaskRest_diff') && cfg.lfp.TaskRest_diff==1
-%                 Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'all');
-%                 Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'w_units');
-%                 Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'wo_units');
-%             end
-% %             
-%             IBI_high_grand_avg_results_file = fullfile([cfg.analyse_lfp_folder filesep 'grand_average_IBIhigh' filesep cfg.monkey,'_',cfg.analyse_states{1, 2} ,'_Triggered_target_wise_Condition_diff_grand_avg_sessions_sites','all','.mat']);
-%             IBI_low_grand_avg_results_file = fullfile([cfg.analyse_lfp_folder filesep 'grand_average_IBIlow' filesep cfg.monkey,'_',cfg.analyse_states{1, 2} ,'_Triggered_target_wise_Condition_diff_grand_avg_sessions_sites','all','.mat']);
+            if isfield(cfg.lfp , 'TaskRest_diff') && cfg.lfp.TaskRest_diff==1
+                Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'all');
+                Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'w_units');
+                Task_Rest_raw_diff = ecg_bna_compute_TaskRest_raw_diff(cfg, 'wo_units');
+            end
 %             
-%             if isfield(cfg.lfp , 'IBI_diff') && exist(IBI_low_grand_avg_results_file,'file') && exist(IBI_high_grand_avg_results_file,'file')
-%                ecg_bna_compute_IBI_raw_diff(cfg, 'all', cfg.lfp.IBIdiff_type);
-%                ecg_bna_compute_IBI_raw_diff(cfg, 'w_units', cfg.lfp.IBIdiff_type);
-%                ecg_bna_compute_IBI_raw_diff(cfg, 'wo_units', cfg.lfp.IBIdiff_type);
-%             end
+            IBI_high_grand_avg_results_file = fullfile([cfg.analyse_lfp_folder filesep 'grand_average_IBIhigh' filesep cfg.monkey,'_',cfg.analyse_states{1, 2} ,'_Triggered_target_wise_Condition_diff_grand_avg_sessions_sites','all','.mat']);
+            IBI_low_grand_avg_results_file = fullfile([cfg.analyse_lfp_folder filesep 'grand_average_IBIlow' filesep cfg.monkey,'_',cfg.analyse_states{1, 2} ,'_Triggered_target_wise_Condition_diff_grand_avg_sessions_sites','all','.mat']);
+            
+            if isfield(cfg.lfp , 'IBI_diff') && exist(IBI_low_grand_avg_results_file,'file') && exist(IBI_high_grand_avg_results_file,'file')
+               ecg_bna_compute_IBI_raw_diff(cfg, 'all', cfg.lfp.IBIdiff_type);
+               ecg_bna_compute_IBI_raw_diff(cfg, 'w_units', cfg.lfp.IBIdiff_type);
+               ecg_bna_compute_IBI_raw_diff(cfg, 'wo_units', cfg.lfp.IBIdiff_type);
+            end
             
 %             if isfield(cfg.lfp, 'cluster_perm') && cfg.lfp.cluster_perm==1 && isfield(cfg.lfp , 'IBI_diff') && exist(IBI_low_grand_avg_results_file,'file') && exist(IBI_high_grand_avg_results_file,'file')
             if isfield(cfg.lfp, 'cluster_perm') && cfg.lfp.cluster_perm==1 
