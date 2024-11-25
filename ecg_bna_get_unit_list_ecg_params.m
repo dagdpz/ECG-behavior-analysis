@@ -151,9 +151,13 @@ for listNum = 1:length(list_of_lists)
     
     low_amplitude_only  = ~any(enough_bins);
     
-    low_amplitude_ccs_any   = ~any(enough_bins) & any(h_AMP_cc_pos);
+    low_amplitude_ccs_any  = ~any(enough_bins) & any(h_AMP_cc_pos);
     
-    low_amplitude_ccs_both  = ~any(enough_bins) & all(h_AMP_cc_pos);
+    low_amplitude_ccs_both = ~any(enough_bins) & all(h_AMP_cc_pos);
+    
+    with_CBE_ccs_any  = any(h_AMP_cc_pos);
+    
+    with_CBE_ccs_both = all(h_AMP_cc_pos);
     
     % find unit ids and targets with enough R-peak counts
     unit_ids_600    = unit_ids(ids_enough_Rpeaks);
@@ -257,6 +261,26 @@ for listNum = 1:length(list_of_lists)
     depths_noLow_amplitude_ccs_both      = depths(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
     hemispheres_noLow_amplitude_ccs_both = hemispheres(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
     ids_both_noLow_amplitude_ccs_both    = ids_both(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    % units with CBE - positively correlated with neuronal phase dynamic in
+    % any condition
+    unit_ids_with_CBE_ccs_any    = unit_ids(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    targets_with_CBE_ccs_any     = targets(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    sites_with_CBE_ccs_any       = sites(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    grid_x_with_CBE_ccs_any      = grid_x(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    grid_y_with_CBE_ccs_any      = grid_y(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    depths_with_CBE_ccs_any      = depths(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    hemispheres_with_CBE_ccs_any = hemispheres(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    ids_both_with_CBE_ccs_any    = ids_both(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    % units with CBE - positively correlated with neuronal phase dynamic in
+    % both conditions
+    unit_ids_with_CBE_ccs_both    = unit_ids(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    targets_with_CBE_ccs_both     = targets(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    sites_with_CBE_ccs_both       = sites(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    grid_x_with_CBE_ccs_both      = grid_x(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    grid_y_with_CBE_ccs_both      = grid_y(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    depths_with_CBE_ccs_both      = depths(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    hemispheres_with_CBE_ccs_both = hemispheres(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
+    ids_both_with_CBE_ccs_both    = ids_both(ids_enough_Rpeaks & ~low_amplitude_ccs_both);
     
     % save unit list for 600
     unit_ids    = unit_ids_600;
@@ -368,6 +392,26 @@ for listNum = 1:length(list_of_lists)
     hemispheres = hemispheres_noLow_amplitude_ccs_both;
     ids_both    = ids_both_noLow_amplitude_ccs_both;
     save([basepath_to_save filesep list_of_lists(listNum).name(1:end-4) '_noLow_amplitude_ccs_both.mat'], 'unit_ids', 'targets', 'sites', 'grid_x', 'grid_y', 'depths', 'hemispheres', 'ids_both')
+    % [any] with CBE based on correlation
+    unit_ids    = unit_ids_with_CBE_ccs_any;
+    targets     = targets_with_CBE_ccs_any;
+    sites       = sites_with_CBE_ccs_any;
+    grid_x      = grid_x_with_CBE_ccs_any;
+    grid_y      = grid_y_with_CBE_ccs_any;
+    depths      = depths_with_CBE_ccs_any;
+    hemispheres = hemispheres_with_CBE_ccs_any;
+    ids_both    = ids_both_with_CBE_ccs_any;
+    save([basepath_to_save filesep list_of_lists(listNum).name(1:end-4) '_with_CBE_ccs_any.mat'], 'unit_ids', 'targets', 'sites', 'grid_x', 'grid_y', 'depths', 'hemispheres', 'ids_both')
+    % [both] with CBE based on correlation
+    unit_ids    = unit_ids_with_CBE_ccs_both;
+    targets     = targets_with_CBE_ccs_both;
+    sites       = sites_with_CBE_ccs_both;
+    grid_x      = grid_x_with_CBE_ccs_both;
+    grid_y      = grid_y_with_CBE_ccs_both;
+    depths      = depths_with_CBE_ccs_both;
+    hemispheres = hemispheres_with_CBE_ccs_both;
+    ids_both    = ids_both_with_CBE_ccs_both;
+    save([basepath_to_save filesep list_of_lists(listNum).name(1:end-4) '_with_CBE_ccs_both.mat'], 'unit_ids', 'targets', 'sites', 'grid_x', 'grid_y', 'depths', 'hemispheres', 'ids_both')
     
     % 4. save the table with unit counts
     % 600
@@ -393,14 +437,18 @@ for listNum = 1:length(list_of_lists)
     unit_counts_noLow_amplitude_ccs_any = count_units_by_target(targets_noLow_amplitude_ccs_any, unique_areas);
     % [both] no low amplitude and no pos. significant cc between phase dynamics
     unit_counts_noLow_amplitude_ccs_both = count_units_by_target(targets_noLow_amplitude_ccs_both, unique_areas);
-    
+    % [any] with CBE based on correlation
+    unit_counts_with_CBE_ccs_any = count_units_by_target(targets_noLow_amplitude_ccs_both, unique_areas);
+    % [both] with CBE based on correlation
+    unit_counts_with_CBE_ccs_both = count_units_by_target(targets_noLow_amplitude_ccs_both, unique_areas);
     T = ...
         table(unique_areas, unit_counts, unit_counts_noCB, ...
         unit_counts_withCB, unit_counts_noCB_corr, ...
         unit_counts_noCB_corr_ccs, unit_counts_highAMP, ...
         unit_counts_low_amplitude, unit_counts_low_amplitude_ccs_any, ...
         unit_counts_low_amplitude_ccs_both, ...
-        unit_counts_noLow_amplitude_ccs_any, unit_counts_noLow_amplitude_ccs_both);
+        unit_counts_noLow_amplitude_ccs_any, unit_counts_noLow_amplitude_ccs_both, ...
+        unit_counts_with_CBE_ccs_any, unit_counts_with_CBE_ccs_both);
     writetable(T, [basepath_to_save filesep list_of_lists(listNum).name(1:end-4) '_600.xls'])
     %     clear T unique_areas ic unit_counts filename unit_ids_after_exclusion targets_after_exclusion
     
