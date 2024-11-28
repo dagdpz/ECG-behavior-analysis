@@ -80,6 +80,9 @@ for v = 1:length(versions)
                     %                     Rpeaks=ecg_bna_jitter(sessions_info(i),cfg.spk);
                     cfg.Input_WC=sessions_info(i).Input_WC;
                     load(sessions_info(i).Input_spikes);
+                    
+%                     ecg_bna_compute_session_phase_response_analysis(trials,population,Rpeaks,cfg)
+                    
                     if cfg.spk.compute_spike_histograms
                         ecg_bna_compute_session_spike_histogram(trials,population,Rpeaks,sessions_info(i),cfg);
                     end
@@ -253,7 +256,7 @@ for v = 1:length(versions)
         if ~exist(allresult_folder, 'dir')
             mkdir(allresult_folder);
         end
-        save(fullfile(allresult_folder,filesep, 'all_sessions_IBIsplit_numRpeaks.mat'), 'allsessions_IBIsplit');
+%         save(fullfile(allresult_folder,filesep, 'all_sessions_IBIsplit_numRpeaks.mat'), 'allsessions_IBIsplit');
     end
     
     if cfg.process_spikes
@@ -543,6 +546,10 @@ for v = 1:length(versions)
         
         if cfg.process_spikes
             
+%             ecg_bna_avg_spike_histogram_clean(cfg, 'per_unit_-0.25-0.25s', 'unitInfo_after_SNR_exclusion_stable_noLow_amplitude_ccs_any')
+            
+%             ecg_bna_population_correlation_analysis(cfg, 'correlation_analysis', 'unitInfo_after_SNR_exclusion_stable_noLow_amplitude_ccs_any')
+            
             % loop though all selection lists
             for listNum = 1:length(cfg.pop.unit_selection_lists)
                 
@@ -553,76 +560,77 @@ for v = 1:length(versions)
                 
                 
                 %% correlation analysis
-                ecg_bna_population_correlation_analysis(cfg, 'correlation_analysis', cfg.pop.unit_selection_lists{listNum})
+%                 ecg_bna_population_correlation_analysis(cfg, 'correlation_analysis', cfg.pop.unit_selection_lists{listNum})
+                
+                %% plot 
+%                 ecg_bna_plot_averageHR(cfg, cfg.pop.unit_selection_lists{listNum})
                 
             end
             
-            ecg_bna_population_cardioballistic(cfg, 'cardioballistic', 'unitInfo_after_SNR_exclusion_selected_noLow_amplitude_ccs_any', 'Population_noLowAmp_ccs_any_cardioballistic')
-            
-            ecg_bna_plot_circular_fits(cfg, 'per_unit_-0.25-0.25s', 'Circular_population_results_0-0.5s')
-            
-            ecg_bna_plot_averageHR(cfg)
-            
-            ecg_bna_plot_venns(cfg)
-            
-            % stable 600
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_600');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg, 'SPK_root_results_fldr', '', 'cardioballistic_stable_600', 'data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 noCB
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noCB');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noCB','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 withCB
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_withCB');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_withCB','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 noCB corr
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noCB_corr');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noCB_corr','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 noCB corr ccs
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noCB_corr_ccs');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noCB_corr_ccs','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 + high amplitude
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_high_amplitude');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_high_amplitude','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 + low amplitude
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_low_amplitude');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_low_amplitude','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 + low amp + any ccs
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_low_amplitude_ccs_any');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_low_amplitude_ccs_any','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 + low amp + both ccs
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_low_amplitude_ccs_both');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_low_amplitude_ccs_both','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 + low amp + any ccs
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noLow_amplitude_ccs_any');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noLow_amplitude_ccs_any','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            % stable 600 + low amp + both ccs
-            output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noLow_amplitude_ccs_both');
-            SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noLow_amplitude_ccs_both','data');
-            ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
-            
-            ecg_bna_plot_circular_fits(cfg, 'per_unit_0-0.5s', 'Circular_population_results_0-0.5s')
-            ecg_bna_plot_circular_fits(cfg, 'per_unit_-0.25-0.25s', 'Circular_population_results_-0.25-0.25s')
-            ecg_bna_plot_circular_fits(cfg, 'per_unit_-0.5-0s', 'Circular_population_results_-0.5-0s')
+%             ecg_bna_population_cardioballistic(cfg, 'cardioballistic', 'unitInfo_after_SNR_exclusion_selected_noLow_amplitude_ccs_any', 'Population_noLowAmp_ccs_any_cardioballistic')
+%             
+%             ecg_bna_plot_circular_fits(cfg, 'per_unit_-0.25-0.25s', 'Circular_population_results_0-0.5s')
+%             
+%             ecg_bna_plot_venns(cfg)
+%             
+%             % stable 600
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_600');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg, 'SPK_root_results_fldr', '', 'cardioballistic_stable_600', 'data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 noCB
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noCB');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noCB','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 withCB
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_withCB');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_withCB','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 noCB corr
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noCB_corr');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noCB_corr','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 noCB corr ccs
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noCB_corr_ccs');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noCB_corr_ccs','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 + high amplitude
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_high_amplitude');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_high_amplitude','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 + low amplitude
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_low_amplitude');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_low_amplitude','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 + low amp + any ccs
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_low_amplitude_ccs_any');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_low_amplitude_ccs_any','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 + low amp + both ccs
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_low_amplitude_ccs_both');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_low_amplitude_ccs_both','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 + low amp + any ccs
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noLow_amplitude_ccs_any');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noLow_amplitude_ccs_any','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             % stable 600 + low amp + both ccs
+%             output_folder = fullfile(cfg.SPK_root_results_fldr, 'Population_cardioballistic_stable_noLow_amplitude_ccs_both');
+%             SPK_cardioballistic=load_stuff(sessions_info,cfg,'SPK_root_results_fldr','', 'cardioballistic_stable_600_noLow_amplitude_ccs_both','data');
+%             ecg_bna_population_cardioballistic(SPK_cardioballistic, output_folder, cfg)
+%             
+%             ecg_bna_plot_circular_fits(cfg, 'per_unit_0-0.5s', 'Circular_population_results_0-0.5s')
+%             ecg_bna_plot_circular_fits(cfg, 'per_unit_-0.25-0.25s', 'Circular_population_results_-0.25-0.25s')
+%             ecg_bna_plot_circular_fits(cfg, 'per_unit_-0.5-0s', 'Circular_population_results_-0.5-0s')
             
         end
         
