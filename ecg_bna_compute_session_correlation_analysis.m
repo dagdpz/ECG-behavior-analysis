@@ -58,6 +58,7 @@ for unitNum = 1:length(population)
         data.(L).timeRRstart             = single(nan(1,1));
         data.(L).FRbyRR_Hz               = single(nan(1,1));
         data.(L).cycleDurations_s        = single(nan(1,1));
+        data.(L).HR_Hz                   = single(nan(1,1));
         data.(L).n_cycles                = single(nan(1,1));
         data.(L).pearson_r               = single(nan(length(cfg.correlation.lag_list), 1));
         data.(L).pearson_p               = single(nan(length(cfg.correlation.lag_list), 1));
@@ -70,6 +71,12 @@ for unitNum = 1:length(population)
         data.(L).RR_pearson_r            = single(nan(length(cfg.correlation.lag_list), 1));
         data.(L).RR_pearson_p            = single(nan(length(cfg.correlation.lag_list), 1));
         data.(L).RR_permuted_p           = single(nan(length(cfg.correlation.lag_list), 1));
+        
+        data.(L).Hz_n_cycles             = single(nan(1,1));
+        data.(L).Hz_pearson_r            = single(nan(length(cfg.correlation.lag_list), 1));
+        data.(L).Hz_pearson_p            = single(nan(length(cfg.correlation.lag_list), 1));
+        data.(L).Hz_permuted_p           = single(nan(length(cfg.correlation.lag_list), 1));
+        
     end
     
     %%
@@ -186,17 +193,20 @@ for unitNum = 1:length(population)
         
         % II. Compute unit firing rate per RR-interval
         data.(L).timeRRstart           = valid_RRinterval_starts;
-        [FRbyRR_Hz, cycleDurations_s] = ...
+        [FRbyRR_Hz, cycleDurations_s]  = ...
             computeFRperCycle(valid_RRinterval_starts, valid_RRinterval_ends, AT_one_stream);
         FRbyRR_Hz(~RR_within_trial90_idx)        = NaN; 
+        HR_Hz   = 1/cycleDurations_s;
+        HR_Hz   = HR_Hz';
         % option 2
 %         FRbyRR_Hz(~RR_within_trial90_idx)        = NaN;
 %         cycleDurations_s(~RR_within_trial98_idx) = NaN;
         % option 1
 %         FRbyRR_Hz(~RR_within_trial90_idx)        = NaN;
 %         cycleDurations_s(~RR_within_trial90_idx) = NaN;
-        data.(L).FRbyRR_Hz = FRbyRR_Hz;
+        data.(L).FRbyRR_Hz        = FRbyRR_Hz;
         data.(L).cycleDurations_s = cycleDurations_s;
+        data.(L).HR_Hz            = HR_Hz;
         
         % compute correlation with different lag        
         [data.(L).n_cycles, data.(L).pearson_r, data.(L).pearson_p, data.(L).permuted_p] = ...
@@ -209,6 +219,13 @@ for unitNum = 1:length(population)
         % autocorrelation cycleDurations_s
         [data.(L).RR_n_cycles, data.(L).RR_pearson_r, data.(L).RR_pearson_p, data.(L).RR_permuted_p] = ...
             compute_correlation_by_lag(cfg,cycleDurations_s,cycleDurations_s);
+        
+        
+        % compute correlation with different lag between FR in Hz and HR in
+        % Hz
+        [data.(L).Hz_n_cycles, data.(L).Hz_pearson_r, data.(L).Hz_pearson_p, data.(L).Hz_permuted_p] = ...
+            compute_correlation_by_lag(cfg, FRbyRR_Hz, HR_Hz);
+        
     end
     save([basepath_to_save filesep data.unitId '_' data.target '_correlation.mat'], 'data', '-v7.3')
     clear data
