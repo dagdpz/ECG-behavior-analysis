@@ -54,37 +54,6 @@ if strcmp(definition,'max')
     sig_1st_clust  = sum([sig_idx_above_start(m_imax), sig_idx_below_start(m_imin)] == 1);
     sig_last_clust = sum([sig_idx_above_end(m_imax), sig_idx_below_end(m_imin)] == 81);
     
-%     if ~isempty(sig_idx_above_start) & ~isempty(sig_idx_above_end) & sig_idx_above_start(m_imax) == 1 & sig_idx_above_end(end) == 81
-%         % 1. 1st cluster above continues in the end of the cycle
-%         m_i=m_imax;
-%         sig_start_end=[sig_idx_above_start(1):sig_idx_above_end(1), sig_idx_above_start(m_i):sig_idx_above_end(m_i)-1];
-%         
-%     elseif ~isempty(sig_idx_above_start) & ~isempty(sig_idx_above_end) & sig_idx_above_start(1) == 1 & sig_idx_above_end(m_imax) == 81
-%         % 2. last cluster above continues in the beginning of the cycle
-%         m_i=m_imax;
-%         sig_start_end=[sig_idx_above_start(m_i):sig_idx_above_end(m_i)-1, sig_idx_above_start(end):sig_idx_above_end(end)-1];
-%         
-%     elseif ~isempty(sig_idx_below_start) & ~isempty(sig_idx_below_end) & sig_idx_below_start(m_imin) == 1 & sig_idx_below_end(end) == 81
-%         % 3. 1st cluster below continues in the end of the cycle
-%         m_i=m_imin;
-%         sig_start_end=[sig_idx_below_start(m_i):sig_idx_below_end(m_i)-1, sig_idx_below_start(end):sig_idx_below_end(end)-1];
-%         
-%     elseif ~isempty(sig_idx_below_start) & ~isempty(sig_idx_below_end) & sig_idx_below_start(1) == 1 & sig_idx_below_end(m_imin) == 81
-%         % 4. last cluster below continues in the beginning of the cycle
-%         m_i=m_imin;
-%         sig_start_end=[sig_idx_below_start(1):sig_idx_below_end(1), sig_idx_below_start(m_i):sig_idx_below_end(m_i)-1];
-%         
-%     else
-%         % use regular way to define cluster duration
-%         if abs(max_pos_diff)>abs(max_neg_diff)
-%             m_i=m_imax;
-%             sig_start_end=[sig_idx_above_start(m_i):sig_idx_above_end(m_i)-1];
-%         else
-%             m_i=m_imin;
-%             sig_start_end=[sig_idx_below_start(m_i):sig_idx_below_end(m_i)-1];
-%         end
-%         
-%     end
     if sig_1st_clust
         % check whether there is significance in the end of the cycle
         if sum([sig_idx_above_end, sig_idx_below_end] == 81)
