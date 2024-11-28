@@ -1,6 +1,6 @@
 function ecg_bna_copy_selected_units(unit_list, source_folder, destination_folder, cfg)
 
-load([cfg.unit_lists filesep unit_list], 'unit_ids');
+load([cfg.unit_lists '_ECG' filesep unit_list], 'unit_ids');
 
 if ~exist(destination_folder, 'dir')
     mkdir(destination_folder)
