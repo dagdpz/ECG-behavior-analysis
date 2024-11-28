@@ -1,5 +1,5 @@
 function [Rpeaks , IBIsplit_concat] =ecg_bna_compute_session_shuffled_Rpeaks(session_info,cfg)
-%% load seed/reset RGN seed
+
 load(session_info.Input_ECG);
 load(session_info.Input_trials);
 
@@ -11,7 +11,6 @@ end
 % get the number of permutations from settings
 global N
 N=cfg.n_permutations;
-
 
 % % condition for using CAP data instead of ECG 
 % if (ecg_bna_cfg.outNameCap)  
