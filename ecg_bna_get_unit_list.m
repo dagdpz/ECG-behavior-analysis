@@ -291,7 +291,7 @@ if compute_unit_subsets
     save(filename, 'unit_ids', 'targets', 'sites', 'grid_x', 'grid_y', 'depths', 'hemispheres', 'ids_both')
     % 1.4. [excluded] create and save unit count table
     write_unit_table(targets, filename);
-    clear unit_ids targets sites grid_x grid_y depths hemispheres
+    clear targets sites grid_x grid_y depths hemispheres
     
     % V. Unit list of excluded units (that aren't units existing either task or rest)
     ids_excluded = ~ismember(unit_ids_before_exclusion, unit_ids);
