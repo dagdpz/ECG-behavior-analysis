@@ -76,6 +76,9 @@ for b=1:numel(blocks_with_LFP)
     
     concat_raw = double(sites.LFP(bs_original:be_original));
     
+    [concat_raw, noisy_trials_lfp_mean , noisy_trials_lfp_zscore] = ecg_bna_noisy_LFP_detection(concat_raw);
+    
+    
     n_data        = size(concat_raw,2);
     n_convolution = n_wavelet+n_data;
     n_conv_pow2   = pow2(nextpow2(n_convolution));
@@ -86,7 +89,7 @@ for b=1:numel(blocks_with_LFP)
     site_lfp.tfs.freq             = frequencies;
     
     site_lfp.tfs.n_samples_per_block(:,b)=[B,be-bs+1];
-    dat=mean(reshape(concat_raw(1:end-mod(size(concat_raw,2), ts)),ts,[]),1);
+    dat = nanmean(reshape(concat_raw(1:end-mod(size(concat_raw,2), ts)),ts,[]),1);
     site_lfp.tfs.lfp(1,bs:be)= dat;
     
     
@@ -99,7 +102,7 @@ for b=1:numel(blocks_with_LFP)
         dat = datconv(1:n_convolution);
         dat = dat(half_wavelet_len+1:end-half_wavelet_len); % +1 is for one overlap point at the start
         % resample here:
-        dat = mean(reshape(dat(1:end-mod(size(dat,2), ts)),ts,[]),1);
+        dat = nanmean(reshape(dat(1:end-mod(size(dat,2), ts)),ts,[]),1);
         
         % extract pha values of reshaped data:
         site_lfp.tfs.pha(f,bs:be)= dat./abs(dat);
