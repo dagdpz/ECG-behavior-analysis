@@ -1062,10 +1062,11 @@ for unitNum = 1:length(population)
         % 11. estimate how much spike amplitude is far from the
         % thresholds
         % bin from the closest threshold first
+        dropnan = isnan(data.(L).AMP_microV);
         higher_threshold_detected = ...
-            all(rmmissing(data.(L).AMP_microV) > data.thresholds_microV(1));
+            all(data.(L).AMP_microV(dropnan) > data.thresholds_microV(1));
         lower_threshold_detected = ...
-            all(rmmissing(data.(L).AMP_microV) > data.thresholds_microV(2));
+            all(data.(L).AMP_microV(dropnan) > data.thresholds_microV(2));
         if higher_threshold_detected && lower_threshold_detected % both thresholds are lower than all the spike amplitudes
             % take the higher one
             data.(L).AMP_voltageBins   = data.thresholds_microV(1):500;
@@ -1159,8 +1160,8 @@ end
 
 function [max_consec_bins, feature_modulation_index] = significant_bins(average_real, lowerPercentile_2_5, upperPercentile_97_5, average_reshuffled)
 % figure out significant differences of spike feature dynamics
-sig_above = average_real > upperPercentile_97_5;
-sig_below = average_real < lowerPercentile_2_5;
+sig_above = bsxfun(@gt, average_real, upperPercentile_97_5);
+sig_below = bsxfun(@lt, average_real, lowerPercentile_2_5);
 
 consec_above = diff([0 find(diff(sig_above)) numel(sig_above)]); % number of repetitions of the same element
 consec_below =  diff([0 find(diff(sig_below)) numel(sig_below)]);
@@ -1184,14 +1185,15 @@ if isempty(max_consec_bins)
 end
 
 feature_modulation_index = ...
-    (max(average_real) - min(average_real)) / mean(average_reshuffled, 'omitnan');
+    (max(average_real) - min(average_real)) / nanmean(average_reshuffled);
 
 end
 
 function [fittedmdl,gof,yfit,lin_mdl] = cosine_fit(x, y, cfg, startPoint_cos)
 % drop nans
-[y,dropnans] = rmmissing(y);
-x            = x(~dropnans);
+dropnans = isnan(y);
+y        = y(~dropnans);
+x        = x(~dropnans);
 
 % do the non-linear fit
 [fittedmdl,gof] = fit(double(x),y,cfg.fit.cos_mod,'StartPoint', startPoint_cos, 'Lower', cfg.fit.cos_lower, 'Upper', cfg.fit.cos_upper);
