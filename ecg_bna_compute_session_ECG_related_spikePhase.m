@@ -935,7 +935,7 @@ for unitNum = 1:length(population)
         
         data.(L).waveforms_microvolts                 = 10^6 * WF_one_stream(eventsTaken,:);
         waveforms_upsampled                           = interpft(data.(L).waveforms_microvolts, 32*4, 2);
-        data.(L).waveforms_upsampled_microvolts       = shift2peak(cfg.phase.wf_times_interp_ms, waveforms_upsampled);
+        data.(L).waveforms_upsampled_microvolts       = shift2peak(cfg.phase.wf_times_interp_ms, waveforms_upsampled, cfg);
         data.(L).waveforms_byBin_microvolts           = arrayfun(@(x) mean(data.(L).waveforms_upsampled_microvolts(bin == x,:),1), 1:cfg.phase.N_phase_bins, 'UniformOutput', false);
         data.(L).waveforms_byBin_microvolts           = cat(1,data.(L).waveforms_byBin_microvolts{:});
         % 7. Calculate spike features with Mosher's procedure
@@ -1207,8 +1207,9 @@ lin_mdl = fitlm(y(:), yfit_all);
 
 end
 
-function spikes_realigned_microV = shift2peak(wf_times_interp_ms, waveforms_upsampled)
-peak_idx = discretize(wf_times_interp_ms, [0.32 0.48]) == 1;
+function spikes_realigned_microV = shift2peak(wf_times_interp_ms, waveforms_upsampled,cfg)
+peak_idx = ...
+    wf_times_interp_ms > cfg.phase.peak_time_range(1) & wf_times_interp_ms < cfg.phase.peak_time_range(2);
 [~, idx] = max(abs(waveforms_upsampled(:,peak_idx)), [], 2); % search for max only around the trough
 idx = idx+find(peak_idx, 1, 'first')-1; % return to indices of the interpolated data
 spikes_realigned_microV = bsxfun(@(x,y) circshift(x,y,1), waveforms_upsampled', 37 - idx'); % shift to peak (idx 37 for the interpolated data), in microvolts
@@ -1222,9 +1223,9 @@ rng(0)
 data_reshuffled      = data(reshuffled_spike_order);
 data_reshuffled      = arrayfun(@(x) nanmean(data_reshuffled(:, bin == x),2), 1:cfg.N_phase_bins, 'UniformOutput', false); % mean by phase
 data_reshuffled      = cat(2, data_reshuffled{:});
-average_reshuffled = mean(data_reshuffled, 1, 'omitnan');
-lowerPercentile_2_5    = prctile(data_reshuffled, 2.5, 1);
-upperPercentile_97_5  = prctile(data_reshuffled, 97.5, 1);
+average_reshuffled   = nanmean(data_reshuffled, 1);
+lowerPercentile_2_5  = prctile(data_reshuffled, 2.5, 1);
+upperPercentile_97_5 = prctile(data_reshuffled, 97.5, 1);
 end
 
 % function Y_microV = upsample_spikes(waveforms, wf_times, wf_times_interp)
