@@ -1132,9 +1132,10 @@ scaled_feature = feature_data / nanmean(feature_data);
 a1 = (max(scaled_feature) - min(scaled_feature))/2;
 
 % compute starting point for phase
-[y,dropnan]  = rmmissing(scaled_feature);
-ph           = eventPhases(~dropnan);
-b1 = mod(circ_mean(ph, y'), 2*pi); % add modulo by 2pi as circ_mean and circ_median can return negative output even having input within 0-2pi
+dropnan = isnan(scaled_feature);
+y       = scaled_feature(~dropnan);
+ph      = eventPhases(~dropnan);
+b1      = mod(circ_mean(ph, y'), 2*pi); % add modulo by 2pi as circ_mean and circ_median can return negative output even having input within 0-2pi
 
 % starting point for intercept
 c1 = nanmean(scaled_feature);
