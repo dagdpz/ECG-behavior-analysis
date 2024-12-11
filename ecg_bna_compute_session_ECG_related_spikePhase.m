@@ -533,8 +533,8 @@ for unitNum = 1:length(population)
         trial_ends_one_stream      = cellfun(@(x,y,z) x+y+Rpeaks([Rpeaks.block] == z).offset, state90_times, TDT_ECG1_t0_from_rec_start, block_nums);
         
         % Create a logical array by vectorized comparison
-        RR_within_trial_idx = any(valid_RRinterval_starts' > trial_starts_one_stream & ...
-            valid_RRinterval_ends' < trial_ends_one_stream, 2);
+        RR_within_trial_idx = any(bsxfun(@gt,valid_RRinterval_starts',trial_starts_one_stream) & ...
+            bsxfun(@lt,valid_RRinterval_ends',trial_ends_one_stream), 2);
         
         % Use logical indexing to filter valid RR intervals
         valid_RRinterval_starts = valid_RRinterval_starts(RR_within_trial_idx);
@@ -542,8 +542,8 @@ for unitNum = 1:length(population)
         
         % reshuffled - get rid of RRs beyond the current set of trials
         for shuffNum = 1:length(shuffled_RRinterval_starts)
-            shuffledRR_within_trial_idx = any(shuffled_RRinterval_starts{shuffNum}' > trial_starts_one_stream & ...
-                shuffled_RRinterval_ends{shuffNum}' < trial_ends_one_stream, 2);
+            shuffledRR_within_trial_idx = any(bsxfun(@gt,shuffled_RRinterval_starts{shuffNum}',trial_starts_one_stream) & ...
+                bsxfun(@lt,shuffled_RRinterval_ends{shuffNum}',trial_ends_one_stream), 2);
             
             shuffled_RRinterval_ends{shuffNum}   = shuffled_RRinterval_ends{shuffNum}(shuffledRR_within_trial_idx); 
             shuffled_RRinterval_starts{shuffNum} = shuffled_RRinterval_starts{shuffNum}(shuffledRR_within_trial_idx);
@@ -590,8 +590,8 @@ for unitNum = 1:length(population)
 %         lowIBI_trial_ends_one_stream      = cellfun(@(x,y,z) x+y+Rpeaks_lowIBI([Rpeaks_lowIBI.block] == z).offset, state90_times, TDT_ECG1_t0_from_rec_start, block_nums);
         
         % Create a logical array by vectorized comparison
-        lowIBI_RR_within_trial_idx = any(lowIBI_valid_RRinterval_starts' > trial_starts_one_stream & ...
-            lowIBI_valid_RRinterval_ends' < trial_ends_one_stream, 2);
+        lowIBI_RR_within_trial_idx = any(bsxfun(@gt,lowIBI_valid_RRinterval_starts',trial_starts_one_stream) & ...
+                bsxfun(@lt,lowIBI_valid_RRinterval_ends',trial_ends_one_stream), 2);
         
         % Use logical indexing to filter valid RR intervals
         lowIBI_valid_RRinterval_starts = lowIBI_valid_RRinterval_starts(lowIBI_RR_within_trial_idx);
@@ -599,8 +599,8 @@ for unitNum = 1:length(population)
         
         % reshuffled - get rid of RRs beyond the current set of trials
         for shuffNum = 1:length(lowIBI_shuffled_RRinterval_starts)
-            lowIBI_shuffledRR_within_trial_idx = any(lowIBI_shuffled_RRinterval_starts{shuffNum}' > trial_starts_one_stream & ...
-                lowIBI_shuffled_RRinterval_ends{shuffNum}' < trial_ends_one_stream, 2);
+            lowIBI_shuffledRR_within_trial_idx = any(bsxfun(@gt,lowIBI_shuffled_RRinterval_starts{shuffNum}',trial_starts_one_stream) & ...
+                bsxfun(@lt,lowIBI_shuffled_RRinterval_ends{shuffNum}',trial_ends_one_stream), 2);
             
             lowIBI_shuffled_RRinterval_ends{shuffNum}   = lowIBI_shuffled_RRinterval_ends{shuffNum}(lowIBI_shuffledRR_within_trial_idx); 
             lowIBI_shuffled_RRinterval_starts{shuffNum} = lowIBI_shuffled_RRinterval_starts{shuffNum}(lowIBI_shuffledRR_within_trial_idx);
@@ -640,8 +640,8 @@ for unitNum = 1:length(population)
 %         trial_ends_one_stream      = cellfun(@(x,y,z) x+y+Rpeaks_highIBI([Rpeaks_highIBI.block] == z).offset, state90_times, TDT_ECG1_t0_from_rec_start, block_nums);
         
         % Create a logical array by vectorized comparison
-        highIBI_RR_within_trial_idx = any(highIBI_valid_RRinterval_starts' > trial_starts_one_stream & ...
-            highIBI_valid_RRinterval_ends' < trial_ends_one_stream, 2);
+        highIBI_RR_within_trial_idx = any(bsxfun(@gt,highIBI_valid_RRinterval_starts{shuffNum}',trial_starts_one_stream) & ...
+                bsxfun(@lt,highIBI_valid_RRinterval_ends{shuffNum}',trial_ends_one_stream), 2);
         
         % Use logical indexing to filter valid RR intervals
         highIBI_valid_RRinterval_starts = highIBI_valid_RRinterval_starts(highIBI_RR_within_trial_idx);
@@ -649,8 +649,8 @@ for unitNum = 1:length(population)
         
         % reshuffled - get rid of RRs beyond the current set of trials
         for shuffNum = 1:length(highIBI_shuffled_RRinterval_starts)
-            highIBI_shuffledRR_within_trial_idx = any(highIBI_shuffled_RRinterval_starts{shuffNum}' > trial_starts_one_stream & ...
-                highIBI_shuffled_RRinterval_ends{shuffNum}' < trial_ends_one_stream, 2);
+            highIBI_shuffledRR_within_trial_idx = any(bsxfun(@gt,highIBI_shuffled_RRinterval_starts{shuffNum}',trial_starts_one_stream) & ...
+                bsxfun(@lt,highIBI_shuffled_RRinterval_ends{shuffNum}',trial_ends_one_stream), 2);
             
             highIBI_shuffled_RRinterval_ends{shuffNum}   = highIBI_shuffled_RRinterval_ends{shuffNum}(highIBI_shuffledRR_within_trial_idx); 
             highIBI_shuffled_RRinterval_starts{shuffNum} = highIBI_shuffled_RRinterval_starts{shuffNum}(highIBI_shuffledRR_within_trial_idx);
