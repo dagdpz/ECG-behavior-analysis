@@ -640,8 +640,8 @@ for unitNum = 1:length(population)
 %         trial_ends_one_stream      = cellfun(@(x,y,z) x+y+Rpeaks_highIBI([Rpeaks_highIBI.block] == z).offset, state90_times, TDT_ECG1_t0_from_rec_start, block_nums);
         
         % Create a logical array by vectorized comparison
-        highIBI_RR_within_trial_idx = any(bsxfun(@gt,highIBI_valid_RRinterval_starts{shuffNum}',trial_starts_one_stream) & ...
-                bsxfun(@lt,highIBI_valid_RRinterval_ends{shuffNum}',trial_ends_one_stream), 2);
+        highIBI_RR_within_trial_idx = any(bsxfun(@gt,highIBI_valid_RRinterval_starts',trial_starts_one_stream) & ...
+                bsxfun(@lt,highIBI_valid_RRinterval_ends',trial_ends_one_stream), 2);
         
         % Use logical indexing to filter valid RR intervals
         highIBI_valid_RRinterval_starts = highIBI_valid_RRinterval_starts(highIBI_RR_within_trial_idx);
