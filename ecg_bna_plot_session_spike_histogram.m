@@ -1,16 +1,15 @@
-function ecg_bna_plot_session_spike_histogram(session_info, cfg)
+function ecg_bna_plot_session_spike_histogram(session_info, cfg, cfg_spec)
 
 % check the Matlab version
 v = version('-release');
 v = str2double(v(1:end-1));
 
-histbins=0.2:0.02:0.8; % bins for RR duration histogram
 N_conditions=numel(cfg.condition);
 condition_colors={cfg.condition.color};
 
-for numTiming = 1:length(cfg.analyse_states)
+for numTiming = 1:length(cfg_spec.analyse_states)
     
-    curr_analyse_states = cfg.analyse_states{numTiming};
+    curr_analyse_states = cfg_spec.analyse_states{numTiming};
     
     basepath_to_save=[cfg.SPK_root_results_fldr filesep 'per_unit_' num2str(curr_analyse_states{3}) '-' num2str(curr_analyse_states{4}) 's'];
     if ~exist(basepath_to_save,'dir')
@@ -27,7 +26,7 @@ for numTiming = 1:length(cfg.analyse_states)
             error('Numbers and names of units don''t match for task and rest')
         end
         
-        BINS=(curr_analyse_states{1,3}:cfg.time.PSTH_binwidth:curr_analyse_states{1,4})*1000;
+        BINS=(curr_analyse_states{1,3}:cfg_spec.PSTH_binwidth:curr_analyse_states{1,4})*1000;
         BINS_1ms = (curr_analyse_states{1,3}:0.001:curr_analyse_states{1,4})*1000;
         
         unit_ID = Output.unit_ID;
@@ -49,10 +48,12 @@ for numTiming = 1:length(cfg.analyse_states)
             scatter(raster_col+curr_analyse_states{3}*1000,raster_row,2,'MarkerFaceColor',col,'MarkerFaceAlpha',0.2,'MarkerEdgeColor',col,'MarkerEdgeAlpha',0.2);
             hold on
             line([0 0],ylim,'color','k');
-            set(gca, 'XTick', [-200 -100 0 100 200], 'XTickLabel', [-200 -100 0 100 200])
-            set(gca, 'YTick', [0 size(Output.(L).raster,1)], 'YTickLabel', [0 size(Output.(L).raster,1)])
-            xlim([curr_analyse_states{3} curr_analyse_states{4}]*1000)
-            ylim([0 size(Output.(L).raster,1)])
+            set(gca, 'XTick', cfg_spec.x_ticks, 'XTickLabel', cfg_spec.x_tick_labels)
+            if ~isempty(Output.(L).raster)
+                set(gca, 'YTick', [0 size(Output.(L).raster,1)], 'YTickLabel', [0 size(Output.(L).raster,1)])
+                xlim([curr_analyse_states{3} curr_analyse_states{4}]*1000)
+                ylim([0 size(Output.(L).raster,1)])
+            end
             xlabel('Time from R-peak, ms')
             ylabel('Number of R-peaks')
             box on
@@ -86,7 +87,7 @@ for numTiming = 1:length(cfg.analyse_states)
             
             plot_PRTHs(Output.(L), curr_analyse_states, BINS, c, cfg)
             
-            set(gca, 'XTick', [-200 -100 0 100 200], 'XTickLabel', [-200 -100 0 100 200])
+            set(gca, 'XTick', cfg_spec.x_ticks, 'XTickLabel', cfg_spec.x_tick_labels)
             ylabel('Firing Rate, Hz');
             xlabel('Time from R-peak, ms');
             
@@ -107,10 +108,10 @@ for numTiming = 1:length(cfg.analyse_states)
             hstR=hstR/sum(hstR);
             hstP=hstP/sum(hstP);
             if ~isnan(hstR)
-                stairs(cfg.time.histbins, hstR, 'Color', col, 'LineWidth', 2)
+                stairs(cfg_spec.histbins, hstR, 'Color', col, 'LineWidth', 2)
             end
             if ~isnan(hstP)
-                stairs(cfg.time.histbins, hstP, 'Color', [0.5,0.5,0.5], 'LineWidth', 2)
+                stairs(cfg_spec.histbins, hstP, 'Color', [0.5,0.5,0.5], 'LineWidth', 2)
             end
             ylabel('fraction of intervals');
             xlabel('RR Duration, s');
@@ -140,16 +141,16 @@ for numTiming = 1:length(cfg.analyse_states)
             subplot(2,N_conditions,c)
             plot_PRTHs(Output.(L).lowIBI, curr_analyse_states, BINS, c, cfg)
             title([L ': lowIBI'])
-            set(gca, 'XTick', [-200 -100 0 100 200], 'XTickLabel', [-200 -100 0 100 200])
+            set(gca, 'XTick', cfg_spec.x_ticks, 'XTickLabel', cfg_spec.x_tick_labels)
             ylabel('Firing Rate, Hz');
-            xlabel('Time from R-peak, ms');
+            xlabel(['Time from ' cfg_spec.analyse_states{numTiming}{2} ', ms']);
             
             subplot(2,N_conditions,2+c)
             plot_PRTHs(Output.(L).highIBI, curr_analyse_states, BINS, c, cfg)
             title([L ': highIBI'])
-            set(gca, 'XTick', [-200 -100 0 100 200], 'XTickLabel', [-200 -100 0 100 200])
+            set(gca, 'XTick', cfg_spec.x_ticks, 'XTickLabel', cfg_spec.x_tick_labels)
             ylabel('Firing Rate, Hz');
-            xlabel('Time from R-peak, ms');
+            xlabel(['Time from ' cfg_spec.analyse_states{numTiming}{2} ', ms']);
             
         end
         
