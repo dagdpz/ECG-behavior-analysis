@@ -1,10 +1,10 @@
-function Output=ecg_bna_compute_session_spike_histogram(trials,population,Rpeaks,sessions_info,cfg)
+function Output=ecg_bna_compute_session_spike_histogram(trials,population,Rpeaks,sessions_info,cfg, cfg_spec)
 Sanity_check=0; % ECG triggered ECG, turn off since typically there is no ECG data in the spike format
 
-for numTiming = 1:length(cfg.analyse_states)
+for numTiming = 1:length(cfg_spec.analyse_states)
 
-    curr_analyse_states = cfg.analyse_states{numTiming};
-    BINS=(curr_analyse_states{1,3}:cfg.time.PSTH_binwidth:curr_analyse_states{1,4})*1000;
+    curr_analyse_states = cfg_spec.analyse_states{numTiming};
+    BINS=(curr_analyse_states{1,3}:cfg_spec.PSTH_binwidth:curr_analyse_states{1,4})*1000;
     offset_blocks_Rpeak=[Rpeaks.offset];
     Rblocks=[Rpeaks.block];
 
@@ -305,22 +305,22 @@ for numTiming = 1:length(cfg.analyse_states)
             %% compute spike density as one continuous vector across all concatenated trials (hmmm there migth be a problem with interleaved trial types here)
             AT=vertcat(arrival_times{:});
             AT(AT>trial_ends(end))=[];
-            [SD_all_trials,RAST,PSTH_time,SD_1ms,RAST_1ms,PSTH_time_1ms]=ecg_bna_spike_density(AT,trial_onsets,trial_ends,cfg.time);
+            [SD_all_trials,RAST,PSTH_time,SD_1ms,RAST_1ms,PSTH_time_1ms]=ecg_bna_spike_density(AT,trial_onsets,trial_ends,cfg_spec);
             
             %% retrieve R-peaks and their reshuffles
             [RPEAK_ts,RPEAK_ts_perm,RPEAK_dur,RPEAK_dur_perm] = retrieve_Rpeaks_and_reshuffles(Rpeaks,b,cfg,c);
             
             %% define which parts of the continous PSTH are during a trial
             
-            during_trial_index     = ecg_bna_define_during_trial_index(trial_onsets, trial_ends, PSTH_time, curr_analyse_states, cfg.time.PSTH_binwidth);
+            during_trial_index     = ecg_bna_define_during_trial_index(trial_onsets, trial_ends, PSTH_time, curr_analyse_states, cfg_spec.PSTH_binwidth);
             during_trial_index_1ms = ecg_bna_define_during_trial_index(trial_onsets, trial_ends, PSTH_time_1ms, curr_analyse_states, 0.001); % for rasters with 1-ms bins
             
-            realPSTHs     = compute_PSTH(RPEAK_ts,RPEAK_dur,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg.time.PSTH_binwidth);
+            realPSTHs     = compute_PSTH(RPEAK_ts,RPEAK_dur,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg_spec.PSTH_binwidth);
             realPSTHs_1ms = compute_PSTH(RPEAK_ts,RPEAK_dur,RAST_1ms,SD_1ms,PSTH_time_1ms,during_trial_index_1ms,curr_analyse_states,0.001); % for rasters with 1-ms bins
-            shuffledPSTH  = compute_PSTH(RPEAK_ts_perm,RPEAK_dur_perm,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg.time.PSTH_binwidth);
-            SD            = do_statistics(realPSTHs,shuffledPSTH,BINS,cfg.time.significance_window{numTiming});
+            shuffledPSTH  = compute_PSTH(RPEAK_ts_perm,RPEAK_dur_perm,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg_spec.PSTH_binwidth);
+            SD            = do_statistics(realPSTHs,shuffledPSTH,BINS,cfg_spec.significance_window{numTiming});
             
-            Output.(L).SD                          = SD.SD_mean ;
+            Output.(L).SD                          = SD.SD_mean;
             Output.(L).SD_STD                      = SD.SD_STD;
             Output.(L).SD_SEM                      = SD.SD_SEM ;
             Output.(L).SDCL                        = SD.SDconf(1,:);
@@ -339,23 +339,25 @@ for numTiming = 1:length(cfg.analyse_states)
             Output.(L).FR                          = mean(SD_all_trials); %% not too sure this was the intended one...
             Output.(L).raster                      = logical(realPSTHs_1ms.raster); % logical replaces all numbers >0 with 1 and reduces memory load
             %Output.(L).Rts                        = single(realPSTHs.RTs{1}); % unless we need this, dont save it!
-            Output.(L).Rds                         = hist(realPSTHs.RDs{1},cfg.time.histbins); % put RR durations to plot those in the histograms later
-            Output.(L).Rds_perm                    = hist([shuffledPSTH.RDs{:}],cfg.time.histbins);
+            Output.(L).Rds                         = hist(realPSTHs.RDs{1},cfg_spec.histbins); % put RR durations to plot those in the histograms later
+            Output.(L).Rds_perm                    = hist([shuffledPSTH.RDs{:}],cfg_spec.histbins);
             Output.(L).SDsubstractedSDP            = Output.(L).SD - Output.(L).SDP; % spikes/s, difference between mean and jittered data
             Output.(L).SDsubstractedSDP_normalized = Output.(L).SDsubstractedSDP ./ Output.(L).SDP *100; % percent signal change
             Output.(L).FR_ModIndex_SubtrSDP        = max(Output.(L).SDsubstractedSDP) - min(Output.(L).SDsubstractedSDP); % difference between max and min FR
             Output.(L).FR_ModIndex_PcS             = max(Output.(L).SDsubstractedSDP_normalized) - min(Output.(L).SDsubstractedSDP_normalized); % difference between max and min % signal change
+            
+            if cfg.process_IBI
             
             % implement median split to heart-cycle durations
             Output.(L).IBI_median           = median(realPSTHs.RDs{1});
             
             % reshuffle based on the computed median
             % lowIBI - set up settings
-            cfg.time.IBI       = 1;
-            cfg.time.IBI_low   = 1;
-            cfg.time.IBI_high  = 0;
-            cfg.time.IBI_thrsh = Output.(L).IBI_median * ones(1, length(cfg.condition));
-            Rpeaks_lowIBI      = ecg_bna_compute_session_shuffled_Rpeaks(sessions_info,cfg.time);
+            cfg_spec.IBI       = 1;
+            cfg_spec.IBI_low   = 1;
+            cfg_spec.IBI_high  = 0;
+            cfg_spec.IBI_thrsh = Output.(L).IBI_median * ones(1, length(cfg.condition));
+            Rpeaks_lowIBI      = ecg_bna_compute_session_shuffled_Rpeaks(sessions_info,cfg_spec);
             for XXX=1:numel(Rpeaks_lowIBI)
                 Rpeaks_lowIBI(XXX).RPEAK_ts=Rpeaks_lowIBI(XXX).RPEAK_ts-Rpeaks_lowIBI(XXX).offset+Rpeaks(XXX).offset;
                 Rpeaks_lowIBI(XXX).shuffled_ts=Rpeaks_lowIBI(XXX).shuffled_ts-Rpeaks_lowIBI(XXX).offset+Rpeaks(XXX).offset;
@@ -365,11 +367,11 @@ for numTiming = 1:length(cfg.analyse_states)
                 retrieve_Rpeaks_and_reshuffles(Rpeaks_lowIBI, b, cfg ,c);
             
             % highIBI - set up settings
-            cfg.time.IBI       = 1;
-            cfg.time.IBI_low   = 0;
-            cfg.time.IBI_high  = 1;
-            cfg.time.IBI_thrsh = Output.(L).IBI_median * ones(1, length(cfg.condition));
-            Rpeaks_highIBI      = ecg_bna_compute_session_shuffled_Rpeaks(sessions_info,cfg.time);
+            cfg_spec.IBI       = 1;
+            cfg_spec.IBI_low   = 0;
+            cfg_spec.IBI_high  = 1;
+            cfg_spec.IBI_thrsh = Output.(L).IBI_median * ones(1, length(cfg.condition));
+            Rpeaks_highIBI      = ecg_bna_compute_session_shuffled_Rpeaks(sessions_info,cfg_spec);
             for XXX=1:numel(Rpeaks_highIBI)
                 Rpeaks_highIBI(XXX).RPEAK_ts=Rpeaks_highIBI(XXX).RPEAK_ts-Rpeaks_highIBI(XXX).offset+Rpeaks(XXX).offset;
                 Rpeaks_highIBI(XXX).shuffled_ts=Rpeaks_highIBI(XXX).shuffled_ts-Rpeaks_highIBI(XXX).offset+Rpeaks(XXX).offset;
@@ -380,7 +382,7 @@ for numTiming = 1:length(cfg.analyse_states)
             
             % !!! IMPORTANT !!! erase settings related to median split
             % reshuffles and re-initiate them for the next unit
-            cfg.time = rmfield(cfg.time, {'IBI', 'IBI_low', 'IBI_high', 'IBI_thrsh'});
+            cfg_spec = rmfield(cfg_spec, {'IBI', 'IBI_low', 'IBI_high', 'IBI_thrsh'});
             
             lowIBIids  = realPSTHs.RDs{1} < Output.(L).IBI_median;
             highIBIids = realPSTHs.RDs{1} > Output.(L).IBI_median;
@@ -400,9 +402,9 @@ for numTiming = 1:length(cfg.analyse_states)
            
             
             % compute time-domain analysis for lowIBI
-            realPSTHs_lowIBI     = compute_PSTH(RPEAK_ts_lowIBI, RPEAK_dur_lowIBI, RAST, SD_all_trials, PSTH_time, during_trial_index, curr_analyse_states, cfg.time.PSTH_binwidth);
-            shuffledPSTH_lowIBI  = compute_PSTH(RPEAK_ts_perm_lowIBI,RPEAK_dur_perm_lowIBI,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg.time.PSTH_binwidth);
-            SD_lowIBI            = do_statistics(realPSTHs_lowIBI,shuffledPSTH_lowIBI,BINS,cfg.time.significance_window{numTiming});
+            realPSTHs_lowIBI     = compute_PSTH(RPEAK_ts_lowIBI, RPEAK_dur_lowIBI, RAST, SD_all_trials, PSTH_time, during_trial_index, curr_analyse_states, cfg_spec.PSTH_binwidth);
+            shuffledPSTH_lowIBI  = compute_PSTH(RPEAK_ts_perm_lowIBI,RPEAK_dur_perm_lowIBI,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg_spec.PSTH_binwidth);
+            SD_lowIBI            = do_statistics(realPSTHs_lowIBI,shuffledPSTH_lowIBI,BINS,cfg_spec.significance_window{numTiming});
             
             Output.(L).lowIBI.SD          = SD_lowIBI.SD_mean;
             Output.(L).lowIBI.SD_STD      = SD_lowIBI.SD_STD;
@@ -425,9 +427,9 @@ for numTiming = 1:length(cfg.analyse_states)
             Output.(L).lowIBI.FR_ModIndex_PcS             = max(Output.(L).lowIBI.SDsubstractedSDP_normalized) - min(Output.(L).lowIBI.SDsubstractedSDP_normalized); % difference between max and min % signal change
         
             % compute time-domain analysis for highIBI
-            realPSTHs_highIBI     = compute_PSTH(RPEAK_ts_highIBI,RPEAK_dur_highIBI,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg.time.PSTH_binwidth);
-            shuffledPSTH_highIBI  = compute_PSTH(RPEAK_ts_perm_highIBI,RPEAK_dur_perm_highIBI,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg.time.PSTH_binwidth);
-            SD_highIBI            = do_statistics(realPSTHs_highIBI,shuffledPSTH_highIBI,BINS,cfg.time.significance_window{numTiming});
+            realPSTHs_highIBI     = compute_PSTH(RPEAK_ts_highIBI,RPEAK_dur_highIBI,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg_spec.PSTH_binwidth);
+            shuffledPSTH_highIBI  = compute_PSTH(RPEAK_ts_perm_highIBI,RPEAK_dur_perm_highIBI,RAST,SD_all_trials,PSTH_time,during_trial_index,curr_analyse_states,cfg_spec.PSTH_binwidth);
+            SD_highIBI            = do_statistics(realPSTHs_highIBI,shuffledPSTH_highIBI,BINS,cfg_spec.significance_window{numTiming});
             
             Output.(L).highIBI.SD          = SD_highIBI.SD_mean;
             Output.(L).highIBI.SD_STD      = SD_highIBI.SD_STD;
@@ -477,6 +479,8 @@ for numTiming = 1:length(cfg.analyse_states)
 %             Output.(L).highIBI_vonMisesNeg          = ecg_bna_fit_neuronal_data(cfg, Output.phase_bin_centers-min(Output.phase_bin_centers), realPSTHs.raster(highIBIids, bin_ids)', sum(highIBIids), 'vonMises', -1);
 %             Output.(L).highIBI_vonMisesNeg.coefs(4) = Output.(L).highIBI_vonMisesNeg.coefs(4)+min(Output.phase_bin_centers);
             
+            end
+
             clear realPSTHs shuffledPSTH SD
             
             %% The part following here is internal sanity check and should be turned off in general since there typically is no ECG data in the spike format
