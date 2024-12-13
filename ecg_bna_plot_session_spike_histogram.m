@@ -30,7 +30,7 @@ for numTiming = 1:length(cfg_spec.analyse_states)
         BINS_1ms = (curr_analyse_states{1,3}:0.001:curr_analyse_states{1,4})*1000;
         
         unit_ID = Output.unit_ID;
-        target = Output.target;
+        target  = Output.target;
         
         sgtitleText = {[Output.unit_ID '_' Output.target], ... %
             ['SNR: ' num2str(Output.quantSNR) '; Fano Factor: ' num2str(Output.stability_rating) '; % of ISIs < 3 ms: '  num2str(100 * Output.Single_rating) '%']};
@@ -54,8 +54,8 @@ for numTiming = 1:length(cfg_spec.analyse_states)
                 xlim([curr_analyse_states{3} curr_analyse_states{4}]*1000)
                 ylim([0 size(Output.(L).raster,1)])
             end
-            xlabel('Time from R-peak, ms')
-            ylabel('Number of R-peaks')
+            xlabel(['Time from ' cfg_spec.analyse_states{numTiming}{2} ', ms']);
+            ylabel(['Number of ' cfg_spec.analyse_states{numTiming}{2} 's'])
             box on
             if ~isnan(Output.(L).raster)
 %                 % figure out how many R-peaks we have and if < 100, plot
@@ -89,7 +89,7 @@ for numTiming = 1:length(cfg_spec.analyse_states)
             
             set(gca, 'XTick', cfg_spec.x_ticks, 'XTickLabel', cfg_spec.x_tick_labels)
             ylabel('Firing Rate, Hz');
-            xlabel('Time from R-peak, ms');
+            xlabel(['Time from ' cfg_spec.analyse_states{numTiming}{2} ', ms']);
             
         end
         
