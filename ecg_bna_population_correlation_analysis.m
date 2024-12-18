@@ -560,7 +560,7 @@ for targGrNum = 1:length(cfg.targets_spike_data)
     writetable(TBL, [basepath_to_save filesep filename '.xls'])
     clear TBL
     
-    % [rest] create tables with Fisher's test results between areas
+    % [task] create tables with Fisher's test results between areas
     filename = 'Exact_Fisher_Test_Task';
     TBL = table({'VPL-dPul'; 'VPL-MD'; 'dPul-MD'}, p_fisher_task(1,:)', h_fisher_task(1,:)', p_fisher_task(2,:)', h_fisher_task(2,:)', [p_crit_fisher_task; NaN; NaN], ...
         'VariableNames', {'Area Combination', ...
