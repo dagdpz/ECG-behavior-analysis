@@ -12,11 +12,13 @@ N_conditions     = 2;
 N_areas          = 3;
 monkey_names     = {'Bacchus','Magnus'};
 condition_names  = {'Rest', 'Task'};
-condition_colors = {'b', 'r'};
+condition_colors = {[0 0 1], [1 0 0]};
 area_list        = {'VPL', 'dPul', 'MD'};
 area_colors      = {[1 0.53 0]; % VPL
                 [0.05 0.65 0.7]; % dPul
                 [1 0 0.6]}; % MD
+figure_font      = 'Arial';
+font_size        = 10;
 BINS             = -250:5:250;
 
 nRpeaks          = 400; % number of R-peaks for rasters
@@ -26,8 +28,8 @@ ECG_fs = 2034.5; % Hz
 
 %% load files
 dataFolder = ...
-    {'Y:\Projects\Pulv_bodysignal\ECG_triggered_spikes\ECG_Bacchus_TaskRest\per_unit_-0.25-0.25s\', ...
-    'Y:\Projects\Pulv_bodysignal\ECG_triggered_spikes\ECG_Magnus_TaskRest\per_unit_-0.25-0.25s\'};
+    {'Y:\Projects\Pulv_bodysignal\ECG_triggered_spikes\ECG_Bacchus_TaskRest_state4\per_unit_-0.25-0.25s\', ...
+    'Y:\Projects\Pulv_bodysignal\ECG_triggered_spikes\ECG_Magnus_TaskRest_state4\per_unit_-0.25-0.25s\'};
 dataFiles = ...
     {{'Bac_20210720_16_VPL_R.mat', 'Bac_20220322_06_dPul_L.mat', 'Bac_20220322_23_MD_R.mat'}, ...
     {'Mag_20230511_18_VPL_L.mat', 'Mag_20230524_29_dPul_L.mat', 'Mag_20230621_38_MD_L.mat'}};
@@ -48,7 +50,12 @@ ECG_2_SD = std(out(1).ECG_Rpeaks_valid,[],1);
 clear out
 
 f1 = figure;
-set(gcf,'Position',[541    42   776   954])
+set(gcf, 'Position',[541    42   776   954], ...
+    'defaultUicontrolFontName',figure_font, ...
+    'defaultUitableFontName',figure_font, ...
+    'defaultAxesFontName',figure_font, ...
+    'defaultTextFontName',figure_font, ...
+    'defaultUipanelFontName',figure_font)
 tiledlayout(6, 3, 'TileSpacing', 'none', 'Padding', 'none');
 
 for m = 1:2 % loop through monkeys
@@ -78,7 +85,7 @@ for m = 1:2 % loop through monkeys
             to_plot=abs(data.Output.(L).sig);
             to_plot(to_plot==0)=NaN;
             plot(BINS,to_plot*(mean(data.Output.(L).SD)+data.Output.(L).sig_sign*ypos),'color',col,'linewidth',5);
-            set(gca, 'XTick', [-200 -100 0 100 200], 'XTickLabel', [-200 -100 0 100 200])
+            set(gca, 'XTick', [-200 -100 0 100 200], 'XTickLabel', [-200 -100 0 100 200], 'FontSize', font_size)
             
             if c == 2
                 
@@ -152,14 +159,14 @@ for m = 1:2 % loop through monkeys
             scatter(raster_col-250,raster_row,3,'filled','MarkerFaceColor',col,'MarkerFaceAlpha',0.4,'MarkerEdgeColor','none');
             hold on
             line([0 0],ylim,'color','k');
-            set(gca, 'XTick', [-200 -100 0 100 200], 'XTickLabel', [-200 -100 0 100 200])
+            set(gca, 'XTick', [-200 -100 0 100 200], 'XTickLabel', [-200 -100 0 100 200], 'FontSize', font_size)
             set(gca, 'YTick', [], 'YTickLabel', [])
             xlim([-250 250])
             
             box on
             if c == 1
                 
-                text(-235,330,['Neuron ' data.Output.unit_ID(5:end)],'Interpreter','none','BackgroundColor','w','EdgeColor','k')
+                text(-235,330,['Neuron ' data.Output.unit_ID(5:end)],'Interpreter','none','BackgroundColor','w','EdgeColor','k','FontSize',font_size)
                 
             end
             
@@ -175,14 +182,34 @@ for m = 1:2 % loop through monkeys
 end
 save_figure_as('Fig2_',dir2save,1)
 
-% plot rasters for all R-peaks
+%% create a legend to paste it separately
+figure,
+set(gcf, 'Position', [1258 606 198 101], ...
+    'defaultUicontrolFontName',figure_font, ...
+    'defaultUitableFontName',figure_font, ...
+    'defaultAxesFontName',figure_font, ...
+    'defaultTextFontName',figure_font, ...
+    'defaultUipanelFontName',figure_font)
+p = plot(NaN, NaN,'b', NaN, NaN, 'r', 'LineWidth', 1);
+axis off
+legend({'Rest','Task'},'FontSize',font_size,'Orientation','horizontal')
+
+save_figure_as('Fig2_legend',dir2save,1)
+
+%% plot rasters for all R-peaks
 for m = 1:2 % loop through monkeys
 
     for a = 1:N_areas
         T = area_list{a};
     
         %% plot rasters with all collected R-peaks
-        figure,
+        figure;
+        set(gcf, ...
+            'defaultUicontrolFontName',figure_font, ...
+            'defaultUitableFontName',figure_font, ...
+            'defaultAxesFontName',figure_font, ...
+            'defaultTextFontName',figure_font, ...
+            'defaultUipanelFontName',figure_font)
         
         % load neuronal data
         if exist([dataFolder{m} dataFiles{m}{a}],'file') == 2
@@ -204,6 +231,7 @@ for m = 1:2 % loop through monkeys
             set(gca, 'YTick', [0 data.Output.(L).NrEvents])
             xlim([-250 250])
             ylim([0 data.Output.(L).NrEvents])
+            title(condition_names{c},'Color',condition_colors{c})
             box on
             
             if c == 1
@@ -214,7 +242,9 @@ for m = 1:2 % loop through monkeys
             end
             
         end
+        saveas(gcf,[dir2save filesep 'FigS2_' monkey_names{m} '_' T '.tif'])
         save_figure_as(['FigS2_' monkey_names{m} '_' T],dir2save,1)
+        
     end
 end
 
