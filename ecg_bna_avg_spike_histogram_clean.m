@@ -514,13 +514,15 @@ for targetGrNum = 1:length(cfg.targets_spike_data)
             
             if sum(sig1) || sum(sig2)
                 [con_tbl, chi2(a), chi2_p(a)] = crosstab(sig1,sig2);
-            
-                % create and save cross-tabulation
-                filename = ['R-peakResponsiveness_Condition_Cross-Tabulation_' T];
-                TBL = table({'Task: R-peak No Resp.';'Task: R-peak Resp.'}, con_tbl(:,1), con_tbl(:,2), ...
-                    'VariableNames', {'A', 'Rest: R-peak No Resp.', 'Rest: R-peak Resp.'});
-                writetable(TBL, [output_folder filesep filename '.xls'])
-                clear TBL con_tbl
+                
+                if ~isnan(chi2)
+                    % create and save cross-tabulation
+                    filename = ['R-peakResponsiveness_Condition_Cross-Tabulation_' T];
+                    TBL = table({'Task: R-peak No Resp.';'Task: R-peak Resp.'}, con_tbl(:,1), con_tbl(:,2), ...
+                        'VariableNames', {'A', 'Rest: R-peak No Resp.', 'Rest: R-peak Resp.'});
+                    writetable(TBL, [output_folder filesep filename '.xls'])
+                    clear TBL con_tbl
+                end
             end
             
         end
