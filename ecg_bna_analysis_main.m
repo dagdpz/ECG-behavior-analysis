@@ -31,22 +31,15 @@ for v = 1:length(versions)
     run([github_folder filesep 'Settings' filesep cfg.project filesep 'ECG_bna' filesep cfg.version '.m']);
     cfg = ecg_bna_define_folders(cfg);
     
-    %% Get info about sessions to be analysed
-    % Read the info about sessions to analyse
+    %% Get info about sessions to be analysed    
     sessions_info = cfg.session_info;
     
     %% per session processing..
-    if cfg.process_per_session
+    if cfg.process_per_session       
         for i = 1:length(sessions_info)
-            java.lang.System.gc() % added by Luba to control the number of graphical device interface handles (hope to handle the problem with freezing plots while creating figures)
-            
-            session_name = [sessions_info(i).Monkey '_' sessions_info(i).Date];
-            load(sessions_info(i).Input_trials);
-            
-            blocks=unique([trials.block]);
-            blockstart=ecg_bna_get_anchor_times(monkey,sessions_info(i).Date,blocks);
-
-            % First make seed and ecg shuffles, then use those shuffles for all subfunctions
+            % First make same seed for each session -> that way even if
+            % the data changes in a subsequent re-running, shuffles in
+            % unaffected sessions are unaffected...
             seed_filename=[cfg.ECG_root_results_fldr filesep 'seed.mat']; %% not quite sure yet where to put seed
             if exist(seed_filename,'file')
                 load(seed_filename);
@@ -56,6 +49,22 @@ for v = 1:length(versions)
                 save(seed_filename,'seed');
             end
             
+            java.lang.System.gc() % added by Luba to control the number of graphical device interface handles (hope to handle the problem with freezing plots while creating figures)
+                        
+            load(sessions_info(i).Input_trials);            
+            
+            % reading in actual TDT clock block starts (in seconds - inprecise, but that is irrelevant)
+            blocks=unique([trials.block]);
+            blockstart=ecg_bna_get_anchor_times(monkey,sessions_info(i).Date,blocks); 
+                        
+            cfg.event_types=cfg.analyse_states(:,2);
+            cfg.events=cfg.analyse_states(:,1);
+            for e=1:numel(cfg.events)
+                current_event=cfg.analyse_states(e,:);
+                Event=ecg_bna_get_events(sessions_info(i),trials,current_event,blockstart);
+                Triggers.(cfg.events{e})=ecg_bna_jitter(Event,cfg.spk);
+            end
+                    
             
             if cfg.process_spikes
                 cfg.Input_WC=sessions_info(i).Input_WC;
@@ -63,8 +72,7 @@ for v = 1:length(versions)
                 %% apply exclusion criteria and save lists of units - we do it once
                 if cfg.spk.compute_unit_subsets
                     ecg_bna_get_unit_list(cfg,1);
-                end
-                
+                end                
                 %% copy selected units separately - we do it once
                 if cfg.spk.move_files
                     ecg_bna_copy_selected_units(cfg)
@@ -72,19 +80,6 @@ for v = 1:length(versions)
                 
                 %% do ECG spike analysis and computations related to cardioballistic effect
                 if cfg.spk.compute_spike_histograms || cfg.spk.compute_spike_phase
-                    %Rpeaks=ecg_bna_compute_session_shuffled_Rpeaks(sessions_info(i),cfg.spk);
-                    
-                    cfg.event_types=cfg.analyse_states(:,2);
-                    cfg.events=cfg.analyse_states(:,1);
-                    
-                    
-                    
-                    for e=1:numel(cfg.events)
-                        current_event=cfg.analyse_states(e,:);
-                        Event=ecg_bna_get_events(sessions_info(i),trials,current_event,blockstart);
-                        Triggers.(cfg.events{e})=ecg_bna_jitter(Event,cfg.spk);
-                    end
-                    
                     if sanitycheck
                         load(strrep(sessions_info(i).Input_spikes,'population','by_block'));
                         ecg_bna_sanity_check(by_block,trials,Triggers,blockstart,cfg)
@@ -107,32 +102,12 @@ for v = 1:length(versions)
 %                 if cfg.spk.plot_spike_phase
 %                     ecg_bna_plot_session_ECG_related_spikePhase(sessions_info(i),cfg)
 %                 end
-                aa=1;
             end
             if cfg.process_LFP
+                fprintf('Analysing for session %s\n', [sessions_info(i).Monkey '_' sessions_info(i).Date]);
+                cfg.session_lfp_fldr = fullfile(cfg.analyse_lfp_folder, 'Per_Session');
+                cfg.sites_lfp_fldr   = fullfile(cfg.analyse_lfp_folder, 'Per_Site');
                 
-                Rpeaks=ecg_bna_compute_session_shuffled_Rpeaks(sessions_info(i),cfg.lfp);
-                %Rpeaks=ecg_bna_jitter(sessions_info(i),cfg.lfp);
-                
-                fprintf('Analysing for session %s\n', session_name);
-                
-                if cfg.lfp.IBI==1
-                    if cfg.lfp.IBI_low == 1 || cfg.lfp.IBI_high == 0
-                        % Read LFP data
-                        cfg.session_lfp_fldr = fullfile(cfg.analyse_lfp_folder, 'Per_Session_IBIlow');
-                        cfg.sites_lfp_fldr   = fullfile(cfg.analyse_lfp_folder, 'Per_Site_IBIlow');
-                        
-                    elseif cfg.lfp.IBI_high == 1 || cfg.lfp.IBI_low == 0
-                        % Read LFP data
-                        cfg.session_lfp_fldr = fullfile(cfg.analyse_lfp_folder, 'Per_Session_IBIhigh');
-                        cfg.sites_lfp_fldr   = fullfile(cfg.analyse_lfp_folder, 'Per_Site_IBIhigh');
-                    end
-                    
-                else
-                    % Read LFP data
-                    cfg.session_lfp_fldr = fullfile(cfg.analyse_lfp_folder, 'Per_Session');
-                    cfg.sites_lfp_fldr   = fullfile(cfg.analyse_lfp_folder, 'Per_Site');
-                end
                 %% this is new
                 sitesdir=fileparts(sessions_info(i).Input_LFP{:});
                 [sitefiles]=dir(sessions_info(i).Input_LFP{:});
@@ -144,43 +119,9 @@ for v = 1:length(versions)
                     site_LFP= ecg_bna_process_LFP(sites, cfg, ts_original);
                     n_LFP_samples_per_block=site_LFP.tfs.n_samples_per_block;
                     
+                    site_triggers     = ecg_bna_resample_triggers2(Triggers,[blocks;blockstart(blocks)],n_LFP_samples_per_block,site_LFP.tfs.sr);                     
+                    site_data=ecg_bna_compute_triggered_LFP_variables(site_LFP,site_triggers,trials,cfg );                    
                     
-                    %% the following part can be replaced by simply cutting out the nonpresent blocks for this site from triggers
-%                     site_triggers=Triggers;
-%                     for all_empty blocks
-%                     end
-                    
-                    %% CHECK BLOCKS OVERLAP - remove LFP for which there is no trigger block - we did the opposite already in resample_triggers!
-                    blocks_not_present_in_triggers=n_LFP_samples_per_block(1, ~ismember(n_LFP_samples_per_block(1,:),[Rpeaks.block]));
-                    if numel(blocks_not_present_in_triggers)==size(n_LFP_samples_per_block,2)
-                        continue;
-                    end
-                    
-                    tfr_samples_to_remove=[];
-                    for b=1:numel(blocks_not_present_in_triggers)
-                        B=blocks_not_present_in_triggers(b);
-                        start_to_remove=sum(n_LFP_samples_per_block(2,n_LFP_samples_per_block(1,:)<B))+1;
-                        end_to_remove=n_LFP_samples_per_block(2,n_LFP_samples_per_block(1,:)==B)+start_to_remove-1;
-                        b_idx=[site_LFP.block]==B;
-                        FN_tr={'LFP_samples','dataset','block','run','n','LFP_tStart','LFP_t0'};
-                        for f=1:numel(FN_tr)
-                            FN=FN_tr{f};
-                            site_LFP.(FN)(b_idx)=[];
-                        end
-                        tfr_samples_to_remove=[tfr_samples_to_remove start_to_remove:end_to_remove];
-                    end
-                    FN_tfs={'phabp','powbp','pha','pow','lfp'};
-                    for f=1:numel(FN_tfs)
-                        FN=FN_tfs{f};
-                        site_LFP.tfs.(FN)(:,tfr_samples_to_remove)=[];
-                    end
-                    
-                    blockstarts=[1, find(diff([trials.block]))+1];
-                    t_offset_per_block=[[trials(blockstarts).block];[trials(blockstarts).TDT_LFPx_tStart]];
-                    triggers.ecg.shuffled = ecg_bna_resample_triggers(Rpeaks,'shuffled_ts',t_offset_per_block,n_LFP_samples_per_block,1/site_LFP.tfs.sr);
-                    triggers.ecg.real     = ecg_bna_resample_triggers(Rpeaks,'RPEAK_ts',t_offset_per_block,n_LFP_samples_per_block,1/site_LFP.tfs.sr);
-                    
-                    site_data=ecg_bna_compute_session_Rpeak_triggered_variables( site_LFP,triggers,trials,cfg );
                     triggered_session_data.sites(s) = site_data;
                     triggered_session_data.session = site_data.session;
                 end

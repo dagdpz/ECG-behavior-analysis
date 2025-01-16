@@ -26,7 +26,6 @@ end
 
 % OPTIONS={};
 % data = TDTbin2mat_working(BLOCK_PATH, OPTIONS{:});
-
  blockstart= blockstart- blockstart(1);
 
 end
