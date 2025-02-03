@@ -87,7 +87,7 @@ trig.target  = site.target;
 
 for cn = 1:length(cfg.condition)
     % store details of analysed condition
-    trig.condition(cn).label    = cfg.condition(cn).name;    
+    trig.condition(cn).label    = cfg.condition(cn).name;
     
     % get trial indices for the given condition
     cond_trials = ecg_bna_get_condition_trials(sitetrials, cfg.condition(cn));
@@ -114,11 +114,11 @@ for cn = 1:length(cfg.condition)
         LFP_samples_end_con=LFP_samples_end(cond_trials);
         LFP_samples_start_con=LFP_samples_start(cond_trials);
         
-%         LFP_samples_end_con=LFP_samples_end(cond_trials)-width_in_samples(2);
-%         LFP_samples_start_con=LFP_samples_start(cond_trials)-width_in_samples(1);
-%         notenoughsamples=LFP_samples_end_con<LFP_samples_start_con;
-%         LFP_samples_start_con(notenoughsamples)=[];
-%         LFP_samples_end_con(notenoughsamples)=[];
+        %         LFP_samples_end_con=LFP_samples_end(cond_trials)-width_in_samples(2);
+        %         LFP_samples_start_con=LFP_samples_start(cond_trials)-width_in_samples(1);
+        %         notenoughsamples=LFP_samples_end_con<LFP_samples_start_con;
+        %         LFP_samples_start_con(notenoughsamples)=[];
+        %         LFP_samples_end_con(notenoughsamples)=[];
         
         time=[width_in_samples(1):width_in_samples(2)]/site.tfs.sr;
         
@@ -140,35 +140,18 @@ for cn = 1:length(cfg.condition)
         trig_con_s(inbetween)=0;
         
         realD = ecg_bna_get_triggered_parameters(site,trig_con_s, width_in_samples);
-        %% change to dependent on state
-%         if true % keep for now, but probably we are going to ALWAYS shuffle
-            %% compute shuffled power spectra, ITPC spectra, lfp, and bandpassed ITPC:
-            trig_con_s=triggers.([event_name '_shuffled']);
-            trig_con_s(trig_con_s<LFP_samples_start_con(1)-width_in_samples(1))=0;
-            trig_con_s(trig_con_s>LFP_samples_end_con(end)-width_in_samples(2)-2)=0;
-            
-            
-            inbetween=false(size(trig_con_s));
-            for t=1:numel(LFP_samples_end_con)-1
-                inbetween=inbetween | trig_con_s<LFP_samples_start_con(t+1) & trig_con_s>LFP_samples_end_con(t);
-            end
-             trig_con_s(inbetween)=0;
-            tic
-            [shuffledD, significance]= ecg_bna_get_triggered_parameters(site,trig_con_s,width_in_samples,realD,cfg);
-            toc
-%         else % some sort of dummies
-%             shuffledD.pow.mean=zeros(size(realD.pow.mean));
-%             shuffledD.pow.std =zeros(size(realD.pow.std));
-%             shuffledD.itpc.mean=zeros(size(realD.itpc.mean));
-%             shuffledD.itpc.std =zeros(size(realD.itpc.std));
-%             shuffledD.lfp.mean=zeros(size(realD.lfp.mean));
-%             shuffledD.lfp.std =zeros(size(realD.lfp.std));
-%             shuffledD.itpcbp.mean=zeros(size(realD.itpcbp.mean));
-%             shuffledD.itpcbp.std =zeros(size(realD.itpcbp.std));
-%             shuffledD.powbp.mean=zeros(size(realD.powbp.mean));
-%             shuffledD.powbp.std =zeros(size(realD.powbp.std));
-%             shuffledD.ntriggers =0;
-%         end
+        %% compute shuffled power spectra, ITPC spectra, lfp, and bandpassed ITPC:
+        trig_con_s=triggers.([event_name '_shuffled']);
+        trig_con_s(trig_con_s<LFP_samples_start_con(1)-width_in_samples(1))=0;
+        trig_con_s(trig_con_s>LFP_samples_end_con(end)-width_in_samples(2)-2)=0;
+        
+        
+        inbetween=false(size(trig_con_s));
+        for t=1:numel(LFP_samples_end_con)-1
+            inbetween=inbetween | trig_con_s<LFP_samples_start_con(t+1) & trig_con_s>LFP_samples_end_con(t);
+        end
+        trig_con_s(inbetween)=0;
+        [shuffledD, significance]= ecg_bna_get_triggered_parameters(site,trig_con_s,width_in_samples,realD,cfg);
         
         normalized = ecg_bna_compute_shufflePredictor_normalization_general(realD,shuffledD,cfg);
         %significance = ecg_bna_compute_significance(realD,shuffledD,cfg);

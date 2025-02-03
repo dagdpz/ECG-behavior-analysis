@@ -68,7 +68,7 @@ elseif strcmp(cfg.lfp.normalization, 'none')
 end
 
 % number of subplots required
-plot_names={'POW','ITPC','Power_BP','ITPC_BP','LFP_Evoked'};
+plot_names={'POW','ITPC','Power_BP','ITPC_BP','LFP_Evoked','average phase'};
 nsubplots=numel(plot_names);
 ncolumns=2;
 nrows=ceil(nsubplots/ncolumns);
@@ -94,6 +94,7 @@ for cn= 1:numel(data.condition)
 %    states_valid=[];
     collim{1}=[];
     collim{2}=[];
+    collim{6}=[];
     
     %for hs = 1:size(con_data, 2)
 %     if isempty(cat(3, con_data(:, hs).(PlotMethod).pow_mean)) % this is a strange break condition to be honest
@@ -101,6 +102,7 @@ for cn= 1:numel(data.condition)
 %     end
     % concatenate tfs for different state windows for plotting
     concat.pow = [];
+    concat.pha = [];
     concat.itpc = [];
     concat.itpcbp = [];
     concat.powbp = [];
@@ -130,6 +132,7 @@ for cn= 1:numel(data.condition)
         lfp_sgnf        =con_data(e).significance.lfp;
         
         pow_mean        =con_data(e).(PlotMethod).pow.mean;
+        pha_mean        =con_data(e).(PlotMethod).pha.mean;
         itpc_mean       =con_data(e).(PlotMethod).itpc.mean;
         itpcbp_mean     =con_data(e).(PlotMethod).itpcbp.mean;
         powbp_mean      =con_data(e).(PlotMethod).powbp.mean;
@@ -156,6 +159,7 @@ for cn= 1:numel(data.condition)
         % concatenate across events with a NaN separation in between
         NaNseparator=100/25;
         concat.pow          = cat(3, concat.pow,        pow_mean,   nan(size(pow_mean, 1),      size(pow_mean, 2),   NaNseparator));
+        concat.pha          = cat(3, concat.pha,        pha_mean,   nan(size(pha_mean, 1),      size(pha_mean, 2),   NaNseparator));
         concat.itpc         = cat(3, concat.itpc,       itpc_mean,  nan(size(itpc_mean, 1),     size(itpc_mean, 2),  NaNseparator));
         concat.itpcbp       = cat(3, concat.itpcbp,     itpcbp_mean,nan(size(itpcbp_mean, 1),   size(itpcbp_mean, 2),NaNseparator));
         concat.powbp        = cat(3, concat.powbp,      powbp_mean, nan(size(powbp_mean, 1),    size(powbp_mean, 2), NaNseparator));
@@ -272,6 +276,40 @@ for cn= 1:numel(data.condition)
         
     end
     
+   %% POW and ITPC
+   toplot={concat.pow,concat.itpc,concat.powbp,concat.itpcbp,0,concat.pha};
+   sp=6; % frequency spectra
+   sph(sp)=subplot(nrows, ncolumns, sp);
+   image(1:size(toplot{sp},3), 1:numel(concat.freq), squeeze(toplot{sp}),'CDataMapping','scaled');
+   set(gca,'YDir','normal');
+   hold on;
+   
+   nonnan=toplot{sp};nonnan(isnan(nonnan))=[];
+   collim{sp}=[min([collim{sp}(:); nonnan(:)]) max([collim{sp}(:); nonnan(:)])];
+   
+   % horizontal lines to separate frequency bands
+   fbandstart = unique(cfg.lfp.frequency_bands(:))';
+   fbandstart_idx = zeros(size(fbandstart));
+   for f = fbandstart
+       f_idx = find(abs(concat.freq - f) == min(abs(concat.freq - f)), 1, 'first');
+       line([tfr_events.startsamples' tfr_events.endsamples']-1/2, [f_idx f_idx], 'color', 'k', 'linestyle', '--');
+       fbandstart_idx(fbandstart == f) = f_idx;
+   end
+   
+   set(gca,'TickDir','out')
+   set(gca, 'ytick', fbandstart_idx);
+   set(gca, 'yticklabel', fbandstart);
+   % add 0.5 at end since the time value is the center of the bin
+   % add 0 at beginning to make x-axis visible
+   set(gca, 'ylim', [0.5,numel(concat.freq) + 0.5]);
+   add_ticks_and_labels(tfr_events,[0.5,numel(concat.freq) + 0.5],8)
+   
+   set(gca, 'xlim', [0 tfr_events.ticksamples(end)] + 0.5);
+   ylabel('Frequency (Hz)');
+   title(plot_names{sp},'Interpreter', 'none', 'fontsize',8);
+   
+    
+    
     %% Evoked LFP
     sp=5;
     sph(sp)=subplot(nrows, ncolumns, sp);
@@ -301,7 +339,7 @@ for cn= 1:numel(data.condition)
     collim{3}=collim{1};
     collim{4}=collim{1};
     collim{5}=collim{1};
-    for sp=1:5
+    for sp=1:6
         subplot(sph(sp));
         set(gca,'CLim',collim{sp})
         cm = colormap('jet');
@@ -319,7 +357,7 @@ for cn= 1:numel(data.condition)
             end
         end
         switch sp
-            case {1,2}
+            case {1,2,6}
                 colormap(cm);
             case {3,4,5}
                 set(cb,'Visible','off');

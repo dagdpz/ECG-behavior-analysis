@@ -17,7 +17,7 @@ function [normalized] = ecg_bna_compute_shufflePredictor_normalization_general(r
 
 
 method = ecg_bna_cfg.lfp.normalization;
-parameters={'pow','itpc','lfp','itpcbp','powbp'};
+parameters={'pow','itpc','lfp','itpcbp','powbp','pha'};
 for p=1:numel(parameters)
     parameter=parameters{p};
     realmean=real.(parameter).mean;

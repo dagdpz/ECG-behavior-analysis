@@ -40,6 +40,7 @@ frequencies = cfg.lfp.foi;
 frequency_bands=cfg.lfp.frequency_bands;
 morlet_borders=1/min(frequencies)*N_cycles/2;
 s = N_cycles./(2*pi*frequencies);
+%s = repmat(0.05,size(frequencies));
 
 ts=round(cfg.lfp.timestep/ts_original);
 
@@ -74,7 +75,7 @@ for b=1:numel(blocks_with_LFP)
     samples_past=be_original;
     samples_past_resampled=be;    
     
-    concat_raw = double(sites.LFP(bs_original:be_original));
+    concat_raw = double(sites.LFP(bs_original:be_original))*1000000; % scale here is really bad 
     
     [concat_raw, noisy_trials_lfp_mean , noisy_trials_lfp_zscore] = ecg_bna_noisy_LFP_detection(concat_raw);
     
@@ -107,7 +108,7 @@ for b=1:numel(blocks_with_LFP)
         % extract pha values of reshaped data:
         site_lfp.tfs.pha(f,bs:be)= dat./abs(dat);
         % extracted Power of each trial
-        site_lfp.tfs.pow(f,bs:be) = abs(dat).^2;        
+        site_lfp.tfs.pow(f,bs:be) = abs(dat).^2;       
     end
     
     for f=1:size(frequency_bands,1)
