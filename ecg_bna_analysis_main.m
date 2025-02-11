@@ -115,7 +115,10 @@ for v = 1:length(versions)
                 ts_original=1/sr;
                 
                 %% load all sites
-                allSitesData = ecg_bna_remove_rawLFP_outliers(sitesdir,sitefiles);
+                tic
+                allSitesData = ecg_bna_remove_rawLFP_outliers(sitesdir,sitefiles,cfg,ts_original);
+                toc;
+                ecg_bna_rawLFP_butterfly_plots(cfg,allSitesData,sr)
                 %% exclude outliars (too many samples with too high/low voltage ? or other criteria)
                    %% threshold = 1V (fixed threshold), more than 1% of bins above that threshold
                 %% exclude blocks with less than 3 sites
