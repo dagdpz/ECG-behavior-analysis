@@ -23,7 +23,7 @@ temp_allSites(inval_targets) = [];
 trials_block = arrayfun(@(x) unique(x.site.block), temp_allSites, 'UniformOutput', false);
 blocks_with_LFP = unique([trials_block{:}]);
 
-sampling_table = table;
+%sampling_table = table;
 dummy = 1;
 for s = 1: length(temp_allSites)
     samples_past=0;
@@ -84,7 +84,7 @@ all_sites_75perc = prctile(abs(all_LFP_concat),75);
     
     tmp_site_25perc = prctile(abs(lfp_data{s}),25);
     tmp_site_75perc = prctile(abs(lfp_data{s}),75);
-    yline(tmp_site_25perc,'b--','LineWidth',3)
+    %yline(tmp_site_25perc,'b--','LineWidth',3)
     if (tmp_site_75perc < all_sites_25perc)||(tmp_site_25perc > all_sites_75perc)
         noisy_site = [noisy_site, s];
     end
@@ -93,13 +93,16 @@ end
 if ~isempty(noisy_site)
     [temp_allSites(noisy_site).noisy_site] = deal(1);
 end
-allSitesData = temp_allSites([temp_allSites.noisy_site]==0);
+sites_to_remove=[temp_allSites.noisy_site]==1;
+allSitesData = temp_allSites(~sites_to_remove);
 allSitesData = rmfield(allSitesData,{'inconsistant_ch','noisy_site'});
+
+
 
 %% sites that are removed dont need to be fixed, correct?
 %% if so, remove them from sampling table immediately
 %% alternatively, you can do noise detection BEFORE creating the sampling table, so that you do not run into this problem in the first place
-to_remove_from_sampling_table=~ismember(sampling_table.site,{temp_allSites.name}); % please check this line, I'm not sure it does what it supposed to
+to_remove_from_sampling_table=ismember(sampling_table.site,find(sites_to_remove)); % please check this line, I'm not sure it does what it supposed to
 sampling_table.site(to_remove_from_sampling_table)  = [];
 sampling_table.block(to_remove_from_sampling_table) = [];
 sampling_table.start_sample(to_remove_from_sampling_table)  = [];
@@ -111,7 +114,7 @@ clear temp_allSites
 % trials_block = arrayfun(@(x) unique(x.site.block), temp_allSites, 'UniformOutput', false);
 % blocks_with_LFP = unique([trials_block{:}]);
 lfp_tagets = arrayfun(@(x) x.site.target, allSitesData, 'UniformOutput', false);
-site_names = arrayfun(@(x) x.site.name, allSitesData, 'UniformOutput', false); %% are these site names?
+site_names = arrayfun(@(x) x.name, allSitesData, 'UniformOutput', false); %% are these site names?
 target_list = unique(lfp_tagets);
 
 %% okay here the point was to average across all sites in one hemisphere, not in one target only..
@@ -127,7 +130,7 @@ hemisphere_list = unique(sites_hemisphere);
     
     for h = 1: length(hemisphere_list)
         %target = target_list{tr};
-        hemisphere_sites = site_names(sites_hemisphere==hemisphere_list(h));
+        hemisphere_sites = find(sites_hemisphere==hemisphere_list(h));
         
         
         for b=1:numel(blocks_with_LFP)
