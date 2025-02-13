@@ -27,7 +27,8 @@ sampling_table = table;
 dummy = 1;
 for s = 1: length(temp_allSites)
     samples_past=0;
-    samples_past_resampled=0;
+    % you are not resampling here :P
+    %samples_past_resampled=0; 
     
     for b = 1:length(blocks_with_LFP)
         B = blocks_with_LFP(b);
@@ -36,8 +37,8 @@ for s = 1: length(temp_allSites)
             sampling_table.block(dummy) = B;
             
             b_samples=[temp_allSites(s).site.block ==B];
-            bs=samples_past_resampled+1;
-            be=floor(sum(temp_allSites(s).site.LFP_samples(b_samples))/ts)+samples_past_resampled;
+            %bs=samples_past_resampled+1;
+            %be=floor(sum(temp_allSites(s).site.LFP_samples(b_samples))/ts)+samples_past_resampled;
             bs_original=samples_past+1;
             be_original=sum(temp_allSites(s).site.LFP_samples(b_samples))+samples_past;
             
@@ -45,7 +46,7 @@ for s = 1: length(temp_allSites)
             sampling_table.end_sample(dummy)    = be_original;
             
             samples_past=be_original;
-            samples_past_resampled=be;
+            %samples_past_resampled=be;
             dummy = dummy+1;
             %     tmp_block_idx(b,:) = arrayfun(@(x) ismember(unique(x.site.block),blocks_with_LFP(b)), temp_allSites, 'UniformOutput', false);
         end
@@ -64,6 +65,7 @@ lfp_sizes = cellfun(@(x) size(x, 2), arrayfun(@(s) s.site.LFP, temp_allSites, 'U
 %     [temp_allSites(inconsistent_sites).inconsistant_ch] = deal(1);
 % end
 
+% idea was not to check across all sites
 all_LFP_concat = horzcat(lfp_data{:});
 all_sites_25perc = prctile(abs(all_LFP_concat),25);
 all_sites_75perc = prctile(abs(all_LFP_concat),75);
@@ -73,6 +75,13 @@ all_sites_75perc = prctile(abs(all_LFP_concat),75);
 % noisy_channels = find(extreme_counts > noise_perc_bin * size(concat_raw, 2)); % More than 5% of timepoints exceed threshold
 noisy_site = [];
 for s = 1:length(temp_allSites)
+    
+% but rather across all sites other than the one you are currently checking 
+site_idx=1:numel(lfp_data);
+all_LFP_concat = horzcat(lfp_data{site_idx~=s});
+all_sites_25perc = prctile(abs(all_LFP_concat),25);
+all_sites_75perc = prctile(abs(all_LFP_concat),75);
+    
     tmp_site_25perc = prctile(abs(lfp_data{s}),25);
     tmp_site_75perc = prctile(abs(lfp_data{s}),75);
     yline(tmp_site_25perc,'b--','LineWidth',3)
@@ -87,58 +96,90 @@ end
 allSitesData = temp_allSites([temp_allSites.noisy_site]==0);
 allSitesData = rmfield(allSitesData,{'inconsistant_ch','noisy_site'});
 
+%% sites that are removed dont need to be fixed, correct?
+%% if so, remove them from sampling table immediately
+%% alternatively, you can do noise detection BEFORE creating the sampling table, so that you do not run into this problem in the first place
+to_remove_from_sampling_table=~ismember(sampling_table.site,{temp_allSites.name}); % please check this line, I'm not sure it does what it supposed to
+sampling_table.site(to_remove_from_sampling_table)  = [];
+sampling_table.block(to_remove_from_sampling_table) = [];
+sampling_table.start_sample(to_remove_from_sampling_table)  = [];
+sampling_table.end_sample(to_remove_from_sampling_table)    = [];
+
+% clear temp_allSites, because it's huge and should not be needed any more ?
+clear temp_allSites
+
 % trials_block = arrayfun(@(x) unique(x.site.block), temp_allSites, 'UniformOutput', false);
 % blocks_with_LFP = unique([trials_block{:}]);
-lfp_tagets = arrayfun(@(x) x.site.target, temp_allSites([temp_allSites.noisy_site] == 0), 'UniformOutput', false);
+lfp_tagets = arrayfun(@(x) x.site.target, allSitesData, 'UniformOutput', false);
+site_names = arrayfun(@(x) x.site.name, allSitesData, 'UniformOutput', false); %% are these site names?
 target_list = unique(lfp_tagets);
-if (sum(contains(target_list,'L'))>0 && sum(contains(target_list,'L'))<length(target_list))...
-        || (sum(contains(target_list,'R'))>0 && sum(contains(target_list,'R'))<length(target_list))
+
+%% okay here the point was to average across all sites in one hemisphere, not in one target only..
+
+% i have never used contains, bu ti guess i would do something like this: 
+% sites_hemisphere is supposed to be 1 for left hemispheres and 2 for
+% right hemispheres
+sites_hemisphere=contains(lfp_tagets,'_L')+2*contains(lfp_tagets,'_R'); %look for the _ as well, because f.e. VPL contains L 
+hemisphere_list = unique(sites_hemisphere);
+
+% if (sum(contains(target_list,'L'))>0 && sum(contains(target_list,'L'))<length(target_list))...
+%         || (sum(contains(target_list,'R'))>0 && sum(contains(target_list,'R'))<length(target_list))
     
-    for tr = 1: length(target_list)
-        target = target_list{tr};
-        site_idx = find(ismember(lfp_tagets, target));
+    for h = 1: length(hemisphere_list)
+        %target = target_list{tr};
+        hemisphere_sites = site_names(sites_hemisphere==hemisphere_list(h));
+        
         
         for b=1:numel(blocks_with_LFP)
             B=blocks_with_LFP(b);
-            site_with_blockB_idx = sampling_table.site(ismember(sampling_table.block,B) & ismember(sampling_table.site,site_idx));
-            site_with_blockB_idx = site_with_blockB_idx([temp_allSites(site_with_blockB_idx).noisy_site]==0);
+            %% thing is i dont trust this as it is im afraid (sampling table and temp_allSites have very different indexing i believe?)
+            %% -> hence the removing noise sites from sampling table beforehand
+            
+            %% i tend to create the indexes i will need inside this loop at the start so it doesnt get confusing
+            block_idx=ismember(sampling_table.block,B) & ismember(sampling_table.site,hemisphere_sites);
+            site_with_blockB_idx = sampling_table.site(block_idx);
+            %site_with_blockB_idx = site_with_blockB_idx([temp_allSites(site_with_blockB_idx).noisy_site]==0);
             block_lfp_concat = [];
             for s = 1: length(site_with_blockB_idx)
-                start_sample = sampling_table.start_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
-                end_sample   = sampling_table.end_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
-                block_lfp_concat = [block_lfp_concat; temp_allSites(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample)];
+                %% i believe its easier to track like this (just a matter of taste i guess)
+                idx=block_idx & sampling_table.site==site_with_blockB_idx(s);
+                start_sample = sampling_table.start_sample(idx);
+                end_sample   = sampling_table.end_sample(idx);
+                block_lfp_concat = [block_lfp_concat; allSitesData(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample)];
             end
             block_lfp_concat_mean = squeeze(mean(block_lfp_concat,1));
             
             for s = 1: length(site_with_blockB_idx)
-                start_sample = sampling_table.start_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
-                end_sample   = sampling_table.end_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
+                %% i believe its easier to track like this (just a matter of taste i guess)
+                idx=block_idx & sampling_table.site==site_with_blockB_idx(s);
+                start_sample = sampling_table.start_sample(idx);
+                end_sample   = sampling_table.end_sample(idx);
                 allSitesData(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample) = allSitesData(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample) - block_lfp_concat_mean;
             end
         end
     end
     
-else
-    for b=1:numel(blocks_with_LFP)
-        B=blocks_with_LFP(b);
-        site_with_blockB_idx = sampling_table.site(ismember(sampling_table.block,B));
-        site_with_blockB_idx = site_with_blockB_idx([temp_allSites(site_with_blockB_idx).noisy_site]==0);
-        block_lfp_concat = [];
-        for s = 1: length(site_with_blockB_idx)
-            start_sample = sampling_table.start_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
-            end_sample   = sampling_table.end_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
-            block_lfp_concat = [block_lfp_concat; temp_allSites(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample)];
-        end
-        block_lfp_concat_mean = squeeze(mean(block_lfp_concat,1));
-        
-        for s = 1: length(site_with_blockB_idx)
-            start_sample = sampling_table.start_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
-            end_sample   = sampling_table.end_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
-            allSitesData(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample) = allSitesData(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample) - block_lfp_concat_mean;
-        end
-    end
-    
-end
+% else
+%     for b=1:numel(blocks_with_LFP)
+%         B=blocks_with_LFP(b);
+%         site_with_blockB_idx = sampling_table.site(ismember(sampling_table.block,B));
+%         site_with_blockB_idx = site_with_blockB_idx([temp_allSites(site_with_blockB_idx).noisy_site]==0);
+%         block_lfp_concat = [];
+%         for s = 1: length(site_with_blockB_idx)
+%             start_sample = sampling_table.start_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
+%             end_sample   = sampling_table.end_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
+%             block_lfp_concat = [block_lfp_concat; temp_allSites(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample)];
+%         end
+%         block_lfp_concat_mean = squeeze(mean(block_lfp_concat,1));
+%         
+%         for s = 1: length(site_with_blockB_idx)
+%             start_sample = sampling_table.start_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
+%             end_sample   = sampling_table.end_sample(ismember(sampling_table.block,B)& sampling_table.site==site_with_blockB_idx(s));
+%             allSitesData(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample) = allSitesData(site_with_blockB_idx(s)).site.LFP(start_sample:end_sample) - block_lfp_concat_mean;
+%         end
+%     end
+%     
+% end
 
 
 % if (sum(contains(target_list,'L'))>0 && sum(contains(target_list,'L'))<length(target_list))...
