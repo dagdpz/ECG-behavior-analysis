@@ -2,8 +2,8 @@ function ecg_bna_rawLFP_butterfly_plots(cfg,allSitesData,sr)
 
 session = cfg.session_info.Date;
 path2save = cfg.results_folder;
-time = 1/sr:1/sr:5;
-nsamples = 5*sr;
+time = 1/sr:1/sr:30;
+nsamples = 30*sr;
 
 clear legend_list
 h = figure; 
@@ -12,7 +12,8 @@ hold on
 for site = 1: length(allSitesData)
     sites = allSitesData(site).site;
     legend_list(site) = {['Channel-', num2str(sites.channel),'-',sites.target, '- depth =',num2str(sites.electrode_depth)]};
-    plot(time,sites.LFP(1:nsamples))
+%     plot(time,sites.LFP(1:nsamples))
+plot(sites.LFP)
 end
 hold off
 
@@ -24,6 +25,6 @@ figName = fullfile([path2save,filesep,'rawLFP channel Check',filesep,'session_',
 saveas(h, figName,'fig');
 saveas(h, figName,'png');
 %%
-close all
+% close all
 
 end

@@ -77,9 +77,14 @@ for b=1:numel(blocks_with_LFP)
     
     concat_raw = double(sites.LFP(bs_original:be_original))*1000000; % scale here is really bad 
     
-    [concat_raw, noisy_trials_lfp_mean , noisy_trials_lfp_zscore] = ecg_bna_noisy_LFP_detection(concat_raw);
-    
-    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % This part is now moved to the very begining of the pipeline, before
+    % detecting a whole noisy channel and the Rerefrencing the block-weise
+    % data in : "ecg_bna_remove_rawLFP_outliers"
+%     plot([bs_original:be_original],concat_raw, 'k'); hold on,
+%     [concat_raw, noisy_trials_lfp_mean , noisy_trials_lfp_zscore] = ecg_bna_noisy_LFP_detection(concat_raw);
+%     plot([bs_original:be_original],concat_raw, 'r'); %hold off,
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     n_data        = size(concat_raw,2);
     n_convolution = n_wavelet+n_data;
     n_conv_pow2   = pow2(nextpow2(n_convolution));

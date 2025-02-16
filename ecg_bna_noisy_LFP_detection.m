@@ -1,4 +1,4 @@
-function [concat_raw, noisy_trials_lfp_mean , noisy_trials_lfp_zscore] = ecg_bna_noisy_LFP_detection(concat_raw)
+function [concat_raw, noisy_trials_lfp_diff , noisy_trials_lfp_zscore] = ecg_bna_noisy_LFP_detection(concat_raw,detection_mode)
 %% Settings for detection of noisy parts - partially taken from LFP pipeline
 % configuration for lfp noise rejection
 cfg_noise = [];
@@ -13,15 +13,15 @@ cfg_noise.methods = {'amp', 'std', 'diff' , 'zscore'};
 cfg_noise.amp_thr = 6; %6
 % number of consecutive samples beyond threshold to be considered for marking
 % a noisy trial
-cfg_noise.amp_N = 10;
+cfg_noise.amp_N = 1;
 % no of standard deviations of trial LFP w.r.t LFP std of all trials
 cfg_noise.std_thr = 4;
 % threshold for lfp derivative (number of std deviations from mean)
-cfg_noise.diff_thr = 6;
+cfg_noise.diff_thr = 8; % was 6 before 15.02.2025
 % number of consecutive samples beyond threshold to be considered for marking
 % a noisy trial
-cfg_noise.diff_N = 10;
-cfg_noise.zscore_thr = 4;
+cfg_noise.diff_N = 1;
+cfg_noise.zscore_thr = 6; % was 4 before 15.02.2025
 % % threshold for lfp power in number of standard deviations from mean
 % cfg_noise.pow_thr = 4;
 % % whether single trials should be plotted
@@ -36,6 +36,7 @@ site_lfp_std = std(concat_raw);
 lfp_raw_minbound = site_lfp_mean - cfg_noise.amp_thr * site_lfp_std;
 lfp_raw_maxbound = site_lfp_mean + cfg_noise.amp_thr * site_lfp_std;
 
+zscored_concat_diff_lfp = zscore(concat_site_diff_lfp);
 % concatenate all derivatives to a 1d array
 arr_concat_diff_lfp = concat_site_diff_lfp;
 % now get the mean and std of LFP for each site
@@ -46,10 +47,10 @@ lfp_diff_minbound = lfp_diff_mean - cfg_noise.diff_thr * lfp_diff_std;
 lfp_diff_maxbound = lfp_diff_mean + cfg_noise.diff_thr * lfp_diff_std;
 % arrays to store the trails marked as noisy by each method
 noisy_trials_lfp_mean   = zeros(1,length(concat_raw));
-noisy_trials_lfp_std    = zeros(1,length(concat_raw));
+% noisy_trials_lfp_std    = zeros(1,length(concat_raw));
 noisy_trials_lfp_diff   = zeros(1,length(concat_raw));
-noisy_trials_lfp_zscore    = zeros(1,length(concat_raw));
-noisy_trials_lfp_pow    = zeros(1,length(concat_raw));
+noisy_trials_lfp_zscore = zeros(1,length(concat_raw));
+% noisy_trials_lfp_pow    = zeros(1,length(concat_raw));
 
 % now find the noisy parts
 
@@ -59,26 +60,45 @@ concat_raw_zscored = zscore(concat_raw);
 for d = 1:length(concat_raw)
     if concat_raw(d) < lfp_raw_minbound || concat_raw(d) > lfp_raw_maxbound
         noisy_trials_lfp_mean(d)=1;
-%         concat_raw(d)= nan;
+        %         concat_raw(d)= nan;
     end
-    if concat_raw_zscored(d)> cfg_noise.zscore_thr
+    if concat_site_diff_lfp(d) < lfp_diff_minbound || concat_site_diff_lfp(d) > lfp_diff_maxbound
+        noisy_trials_lfp_diff(d)=1;
+        %         concat_raw(d)= nan;
+    end
+    %     if abs(zscored_concat_diff_lfp(d)) > cfg_noise.diff_thr
+    %         noisy_trials_lfp_diff(d)=1;
+    %         %         concat_raw(d)= nan;
+    %     end
+    if abs(concat_raw_zscored(d))> cfg_noise.zscore_thr
         noisy_trials_lfp_zscore(d)=1;
-%         concat_raw(d)= nan;
+        %         concat_raw(d)= nan;
     end
 end
 % plot(noisy_trials_lfp_zscore),hold on, plot(noisy_trials_lfp_mean)
-x = find(noisy_trials_lfp_mean);
+% x = find(noisy_trials_lfp_mean);
+x = find(noisy_trials_lfp_diff);
 y = find(noisy_trials_lfp_zscore);
-if isempty(intersect(x,y))
-    z = sort([x,y]);
-elseif ~isempty(intersect(x,y))
-    z = sort(unique([x,y]));
+switch detection_mode
+    case 'zscr_or_deriv'
+        if isempty(intersect(x,y))
+            z = sort([x,y]);
+        elseif ~isempty(intersect(x,y))
+            z = sort(unique([x,y]));
+        end
+    case 'zscr'
+        z = sort(y);
+    case 'deriv'
+        z = sort(x);
+    case 'zscr_and_deriv'
+        z = intersect(x,y);
 end
 
-mask = ones(1,length(concat_raw));
-mask(z) = 0;
-mask = find(mask);
-trial_lfp_std = std(concat_raw(mask));
+
+% mask = ones(1,length(concat_raw));
+% mask(z) = 0;
+% mask = find(mask);
+% trial_lfp_std = std(concat_raw(mask));
 
 idx_shift = [1 , find(diff(z)>1)+1 , length(z)];
 idx_shift = unique(idx_shift);
@@ -89,7 +109,7 @@ if ~isempty(z) && length(z)>1
         if (z(tmp(1))-1 > 0)
             subs_mean = mean([concat_raw(z(tmp(1))-1)  , concat_raw(z(tmp(2)-1)+1)]);
             subs_std = std([concat_raw(z(tmp(1))-1)  ,  concat_raw(z(tmp(2)-1)+1)]);
-%             concat_raw(z(tmp(1):tmp(2)-1)) = subs_mean.*ones(1,lng);
+            %             concat_raw(z(tmp(1):tmp(2)-1)) = subs_mean.*ones(1,lng);
             %% Linear Interpolation:
             x = [z(tmp(1))-1 , z(tmp(2)-1)+1];
             v = [concat_raw(z(tmp(1))-1)  , concat_raw(z(tmp(2)-1)+1)];
@@ -99,7 +119,7 @@ if ~isempty(z) && length(z)>1
             concat_raw(z(tmp(1):tmp(2)-1)) = vq(2:end-1);
         else
             subs_mean = concat_raw(z(tmp(2)-1)+1);
-%             concat_raw(z(tmp(1):tmp(2)-1)) = subs_mean.*ones(1,lng);
+            %             concat_raw(z(tmp(1):tmp(2)-1)) = subs_mean.*ones(1,lng);
             %% Linear Interpolation:
             x = [z(tmp(1)) , z(tmp(2)-1)+1];
             v = [concat_raw(z(tmp(1)))  , concat_raw(z(tmp(2)-1)+1)];
@@ -110,7 +130,7 @@ if ~isempty(z) && length(z)>1
         end
     end
 end
-% 
+%
 
 
 % % a trial is noisy if for more than N consecutive samples,

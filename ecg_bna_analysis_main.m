@@ -115,10 +115,15 @@ for v = 1:length(versions)
                 ts_original=1/sr;
                 
                 %% load all sites
-                tic
-                allSitesData = ecg_bna_remove_rawLFP_outliers(sitesdir,sitefiles,cfg,ts_original);
-                toc;
-                ecg_bna_rawLFP_butterfly_plots(cfg,allSitesData,sr)
+                
+% % % %                 allSitesData = ecg_bna_remove_rawLFP_outliers(sitesdir,sitefiles,cfg,ts_original);
+% % % %                 removed_sites = find(~ismember({sitefiles.name},{allSitesData.name}));
+% % % %                 if ~isempty(removed_sites)
+% % % %                     removed_sites_name = sitefiles(removed_sites).name;
+% % % %                 else
+% % % %                     fprintf("\n\n*****  NO site was removed ! *****\n\n");
+% % % %                 end
+% % % %                 ecg_bna_rawLFP_butterfly_plots(cfg,allSitesData,sr)
                 %% exclude outliars (too many samples with too high/low voltage ? or other criteria)
                    %% threshold = 1V (fixed threshold), more than 1% of bins above that threshold
                 %% exclude blocks with less than 3 sites
@@ -128,11 +133,11 @@ for v = 1:length(versions)
                 %% create corrected site LFP data for each valid site, and loop through that
                 %% instead of looping through sitefiles and load each of them again
                 
-                for s = 1:length(allSitesData) %% loop only through valid sites
-%                     load([sitesdir filesep sitefiles{s}.name], 'sites');
+                for s = 1:length(sitefiles) %% loop only through valid sites
+                    load([sitesdir filesep sitefiles(s).name], 'sites');
                     %% adress correct site
                     %% site = ...
-                    sites = allSitesData(s).site;
+%                     sites = allSitesData(s).site;
                     site_LFP= ecg_bna_process_LFP(sites, cfg, ts_original);
                     n_LFP_samples_per_block=site_LFP.tfs.n_samples_per_block;
                     
