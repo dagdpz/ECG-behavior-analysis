@@ -63,7 +63,16 @@ if ~exist(site_results_folder, 'dir')
     mkdir(site_results_folder);
 end
 resampling_factor=site.tfs.resampling_factor;
-LFP_samples_end=round(cumsum(site.LFP_samples)*resampling_factor);
+
+u_blocks=unique(site.block);
+LFP_samples_end=0;
+for b=u_blocks
+    blocktrials=site.block==b;
+    prev_block_end=LFP_samples_end(end);
+    LFP_samples_end=[LFP_samples_end prev_block_end+round(cumsum(site.LFP_samples(blocktrials))*resampling_factor)];
+    LFP_samples_end(end)=prev_block_end+floor(sum(site.LFP_samples(blocktrials))*resampling_factor);
+end
+LFP_samples_end(1)=[];
 LFP_samples_start=[0 LFP_samples_end(1:end-1)]+1;
 
 %% convert to ipsi/contra
@@ -113,15 +122,7 @@ for cn = 1:length(cfg.condition)
         
         LFP_samples_end_con=LFP_samples_end(cond_trials);
         LFP_samples_start_con=LFP_samples_start(cond_trials);
-        
-        %         LFP_samples_end_con=LFP_samples_end(cond_trials)-width_in_samples(2);
-        %         LFP_samples_start_con=LFP_samples_start(cond_trials)-width_in_samples(1);
-        %         notenoughsamples=LFP_samples_end_con<LFP_samples_start_con;
-        %         LFP_samples_start_con(notenoughsamples)=[];
-        %         LFP_samples_end_con(notenoughsamples)=[];
-        
         time=[width_in_samples(1):width_in_samples(2)]/site.tfs.sr;
-        
         
         trig.condition(cn).event(e).trials = find(cond_trials); %find(cond_trials);
         trig.condition(cn).event(e).ntrials = sum(cond_trials);
@@ -143,7 +144,7 @@ for cn = 1:length(cfg.condition)
         %% compute shuffled power spectra, ITPC spectra, lfp, and bandpassed ITPC:
         trig_con_s=triggers.([event_name '_shuffled']);
         trig_con_s(trig_con_s<LFP_samples_start_con(1)-width_in_samples(1))=0;
-        trig_con_s(trig_con_s>LFP_samples_end_con(end)-width_in_samples(2)-2)=0;
+        trig_con_s(trig_con_s>LFP_samples_end_con(end)-width_in_samples(2))=0;
         
         
         inbetween=false(size(trig_con_s));
